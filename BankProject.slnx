@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="BankClient/BankClient.csproj" />
   <Project Path="BankServer/BankServer.csproj" />
+  <Project Path="BankShared/BankShared.csproj" Id="9c11eaf4-14c4-4773-91f9-282457c79d9b" />
 </Solution>
