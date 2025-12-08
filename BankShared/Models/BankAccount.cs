@@ -7,16 +7,16 @@ namespace BankShared.Models
     [Serializable]
     public class BankAccount
     {
-        public string CardNumber { get; set; }
+        public string AccountNumber { get; set; }
         public string OwnerName { get; set; }
         public decimal Balance { get; set; }
 
         //Порожній конструктор потрібен для серіалізації
         public BankAccount() { }
 
-        public BankAccount(string cardNumber, string ownerName, decimal initialBalance)
+        public BankAccount(string accountNumber, string ownerName, decimal initialBalance)
         {
-            CardNumber = cardNumber;
+            AccountNumber = accountNumber;
             OwnerName = ownerName;
             Balance = initialBalance;
         }
