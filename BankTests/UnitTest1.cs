@@ -1,9 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Text.Json;
-using Xunit;
+﻿using BankClient.Services;
 using BankServer.Data;
 using BankServer.Services;
+using BankShared.Constants;
+using System;
+using System.IO;
+using System.IO.MemoryMappedFiles;
+using System.Text;
+using System.Text.Json;
+using Xunit;
 
 namespace Bank.Tests
 {
@@ -90,6 +94,35 @@ namespace Bank.Tests
         public void Constructor_ShouldThrowIfPathNull()
         {
             Assert.Throws<ArgumentNullException>(() => new FileLogger(null));
+        }
+
+    }
+
+    public class BankClientServiceTests
+    {
+        [Fact]
+        public void SendRequest_ShouldWriteJsonToSharedMemory()
+        {
+            var service = new BankClientService();
+            var testData = new { Command = "Test", Amount = 123.45 };
+
+            using (var serverMmf = MemoryMappedFile.CreateNew(
+                AppConstants.MemoryMappedFileName,
+                AppConstants.MemoryBufferSize))
+            {
+                service.SendRequest(testData);
+
+                using (var stream = serverMmf.CreateViewStream())
+                {
+                    byte[] buffer = new byte[AppConstants.MemoryBufferSize];
+                    stream.Read(buffer, 0, buffer.Length);
+
+                    string jsonResult = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
+
+                    var expectedJson = JsonSerializer.Serialize(testData);
+                    Assert.Equal(expectedJson, jsonResult);
+                }
+            }
         }
     }
 }
