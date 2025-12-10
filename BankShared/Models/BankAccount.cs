@@ -20,5 +20,20 @@ namespace BankShared.Models
             OwnerName = ownerName;
             Balance = initialBalance;
         }
+        public void Credit(decimal amount)
+        {
+            Balance += amount;
+        }
+
+       
+        public bool Debit(decimal amount)
+        {
+            if (Balance >= amount) 
+            {
+                Balance -= amount;
+                return true;
+            }
+            return false; 
+        }
     }
 }
