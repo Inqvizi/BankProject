@@ -1,51 +1,47 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 
 namespace BankServer.Services
 {
     public class FileLogger
     {
-        private readonly string _logPath;
+        private readonly string _filePath;
 
-        public FileLogger(string logPath = "logs.json")
+        public FileLogger(string filePath = "logs.json")
         {
-            _logPath = logPath;
-
-            if (!File.Exists(_logPath))
-            {
-                File.WriteAllText(_logPath, "[]", Encoding.UTF8);
-            }
+            _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+            EnsureFileExists();
         }
 
         public void LogTransaction(string message)
         {
+            if (message == null)
+                throw new ArgumentNullException(nameof(message));
+
             var logEntry = new
             {
-                Timestamp = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss"),
+                Timestamp = DateTime.UtcNow,
                 Message = message
             };
 
-            string jsonEntry = JsonSerializer.Serialize(logEntry);
+            var json = JsonSerializer.Serialize(logEntry);
 
-            using (var stream = new FileStream(_logPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            // Дозапис рядка у файл
+            using (var writer = new StreamWriter(_filePath, append: true))
             {
-                if (stream.Length <= 2)
-                {
-                    // порожній масив []
-                    stream.Seek(1, SeekOrigin.Begin); // після [
-                    byte[] bytes = Encoding.UTF8.GetBytes(jsonEntry + "]");
-                    stream.Write(bytes, 0, bytes.Length);
-                }
-                else
-                {
-                    // масив має записи, вставляємо кому перед новим елементом
-                    stream.Seek(-1, SeekOrigin.End); // перед ]
-                    byte[] bytes = Encoding.UTF8.GetBytes("," + jsonEntry + "]");
-                    stream.Write(bytes, 0, bytes.Length);
-                }
+                writer.WriteLine(json);
             }
+        }
+
+        private void EnsureFileExists()
+        {
+            var dir = Path.GetDirectoryName(_filePath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            if (!File.Exists(_filePath))
+                File.Create(_filePath).Dispose();
         }
     }
 }
