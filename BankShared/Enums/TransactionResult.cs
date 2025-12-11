@@ -1,9 +1,13 @@
-﻿
-
-public enum TransactionResult
+﻿namespace BankShared.Enums
 {
-    Success,
-    AccountNotFound,
-    InvalidAmount,
-    InsufficientFunds
+
+    public enum TransactionResult
+    {
+        Success,
+        AccountNotFound,
+        InvalidAmount,
+        InsufficientFunds,
+        ServerError,
+
+    }
 }
