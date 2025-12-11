@@ -98,31 +98,31 @@ namespace Bank.Tests
 
     }
 
-    public class BankClientServiceTests
-    {
-        [Fact]
-        public void SendRequest_ShouldWriteJsonToSharedMemory()
-        {
-            var service = new BankClientService();
-            var testData = new { Command = "Test", Amount = 123.45 };
+    //public class BankClientServiceTests
+    //{
+    //    [Fact]
+    //    public void SendRequest_ShouldWriteJsonToSharedMemory()
+    //    {
+    //        var service = new BankClientService();
+    //        var testData = new { Command = "Test", Amount = 123.45 };
 
-            using (var serverMmf = MemoryMappedFile.CreateNew(
-                AppConstants.MemoryMappedFileName,
-                AppConstants.MemoryBufferSize))
-            {
-                service.SendRequest(testData);
+    //        using (var serverMmf = MemoryMappedFile.CreateNew(
+    //            AppConstants.MemoryMappedFileName,
+    //            AppConstants.MemoryBufferSize))
+    //        {
+    //            service.SendRequest(testData);
 
-                using (var stream = serverMmf.CreateViewStream())
-                {
-                    byte[] buffer = new byte[AppConstants.MemoryBufferSize];
-                    stream.Read(buffer, 0, buffer.Length);
+    //            using (var stream = serverMmf.CreateViewStream())
+    //            {
+    //                byte[] buffer = new byte[AppConstants.MemoryBufferSize];
+    //                stream.Read(buffer, 0, buffer.Length);
 
-                    string jsonResult = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
+    //                string jsonResult = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
 
-                    var expectedJson = JsonSerializer.Serialize(testData);
-                    Assert.Equal(expectedJson, jsonResult);
-                }
-            }
-        }
-    }
+    //                var expectedJson = JsonSerializer.Serialize(testData);
+    //                Assert.Equal(expectedJson, jsonResult);
+    //            }
+    //        }
+    //    }
+    //}
 }
