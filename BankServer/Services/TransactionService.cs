@@ -1,9 +1,7 @@
-﻿// Файл: BankServer/Services/TransactionService.cs
-
-using BankShared.DTOs;
+﻿using BankShared.DTOs;
 using BankShared.Enums;
-using BankServer.Data; // Використовуємо ваш існуючий простір імен для репозиторію
-using BankShared.Models; // Необхідно для BankAccount
+using BankServer.Data; 
+using BankShared.Models; 
 
 namespace BankServer.Services
 {
@@ -11,7 +9,7 @@ namespace BankServer.Services
     {
         private readonly BankRepository _repository;
 
-        // Dependency Injection: приймаємо BankRepository
+        private static Mutex _mutex = new Mutex(); 
         public TransactionService(BankRepository repository)
         {
             _repository = repository;
@@ -28,7 +26,16 @@ namespace BankServer.Services
                 ResultStatus = TransactionResult.Success
             };
 
-            // 1. Пошук рахунку
+            _mutex.WaitOne();
+
+            try
+            {
+
+
+
+
+            
+            // Пошук рахунку
             BankAccount? account = _repository.GetByNumber(request.AccountNumber);
             if (account == null)
             {
@@ -37,10 +44,10 @@ namespace BankServer.Services
                 return response;
             }
 
-            // Встановлюємо поточний баланс (якщо транзакція не пройде)
+
             response.NewBalance = account.Balance;
 
-            // 2. Валідація суми
+            // Валідація суми
             if (request.Amount <= 0)
             {
                 response.ResultStatus = TransactionResult.InvalidAmount;
@@ -48,7 +55,6 @@ namespace BankServer.Services
                 return response;
             }
 
-            // --- 3. ВИКОНАННЯ ОСНОВНОЇ ЛОГІКИ (A2) ---
 
             if (request.Type == TransactionType.Deposit)
             {
@@ -57,22 +63,25 @@ namespace BankServer.Services
             }
             else if (request.Type == TransactionType.Withdraw)
             {
-                // Перевірка (InsufficientFunds)
+
                 bool success = account.Debit(request.Amount);
 
                 if (!success)
                 {
                     response.ResultStatus = TransactionResult.InsufficientFunds;
                     response.Message = "Insufficient funds.";
-                    response.NewBalance = account.Balance; // Баланс не змінювався
-                    return response; // НЕМЕДІЙНО ВИХОДИМО З ПОМИЛКОЮ
+                    response.NewBalance = account.Balance;
+                    return response;
                 }
                 response.Message = $"Withdrawal of {request.Amount} successful.";
             }
 
-            // 4. Фінальне оновлення та повернення
+
             response.NewBalance = account.Balance;
             return response;
+        }
+            finally { _mutex.ReleaseMutex(); }
+
         }
     }
 }
