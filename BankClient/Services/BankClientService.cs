@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
-using System;
-using System.IO;
+using System.Threading;
 using System.IO.MemoryMappedFiles;
 using System.Text.Json;
 using BankShared.Constants;
-using BankShared.Models;
 
 namespace BankClient.Services
 {
@@ -14,40 +11,58 @@ namespace BankClient.Services
     {
         public void SendRequest(object request)
         {
-            try
+            string json = JsonSerializer.Serialize(request);
+            byte[] data = Encoding.UTF8.GetBytes(json);
+
+            if (data.Length > AppConstants.MemoryBufferSize)
             {
-                string json = JsonSerializer.Serialize(request);
-                byte[] data = Encoding.UTF8.GetBytes(json);
+                throw new Exception("Request is too large for shared memory.");
+            }
 
-                if (data.Length > AppConstants.MemoryBufferSize)
+            using (var mutex = new Mutex(false, AppConstants.MutexName))
+            {
+               
+                try
                 {
-                    throw new Exception("Request is too large for shared memory.");
+                    mutex.WaitOne();
                 }
-
-                using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
+                catch (AbandonedMutexException)
                 {
-                    using (var stream = mmf.CreateViewStream())
-                    {
-                        stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
-
-                        stream.Position = 0;
-
-                        stream.Write(data, 0, data.Length);
-                    }
+                    
                 }
 
                 try
                 {
-                    using (var signal = EventWaitHandle.OpenExisting(AppConstants.NewDataSignalName))
+                    using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
                     {
-                        signal.Set();
+                        using (var stream = mmf.CreateViewStream())
+                        {
+                            stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
+                            stream.Position = 0;
+
+                            stream.Write(data, 0, data.Length);
+                        }
+                    }
+
+                    try
+                    {
+                        using (var signal = EventWaitHandle.OpenExisting(AppConstants.NewDataSignalName))
+                        {
+                            signal.Set();
+                        }
+                    }
+                    catch (WaitHandleCannotBeOpenedException)
+                    {
                     }
                 }
-                catch (WaitHandleCannotBeOpenedException) { }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error writing to shared memory: {ex.Message}");
+                catch (Exception ex)
+                {
+                    throw new Exception($"Error writing to shared memory: {ex.Message}");
+                }
+                finally
+                {
+                    mutex.ReleaseMutex();
+                }
             }
         }
     }

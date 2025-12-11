@@ -11,7 +11,7 @@ namespace BankShared.Models
         public string OwnerName { get; set; }
         public decimal Balance { get; set; }
 
-        //Порожній конструктор потрібен для серіалізації
+        //Порожній конструктор потрібен для серіалізації (фу) 
         public BankAccount() { }
 
         public BankAccount(string accountNumber, string ownerName, decimal initialBalance)
