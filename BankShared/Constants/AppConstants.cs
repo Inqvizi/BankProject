@@ -17,5 +17,7 @@ namespace BankShared.Constants
 
         //Розмір буфера в байтах
         public const int MemoryBufferSize = 4096;
+
+        public const string ClientWaitSignalName = "Local\\BankAppClientWaitSignal";
     }
 }
