@@ -35,6 +35,15 @@ namespace BankClient.Services
                         stream.Write(data, 0, data.Length);
                     }
                 }
+
+                try
+                {
+                    using (var signal = EventWaitHandle.OpenExisting(AppConstants.NewDataSignalName))
+                    {
+                        signal.Set();
+                    }
+                }
+                catch (WaitHandleCannotBeOpenedException) { }
             }
             catch (Exception ex)
             {
