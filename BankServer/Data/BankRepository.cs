@@ -26,5 +26,9 @@ namespace BankServer.Data
             return _accounts.FirstOrDefault(a => a.AccountNumber == accountNumber);
         }
 
+        public List<BankAccount> GetAll()
+        {
+            return _accounts;
+        }
     }
 }
