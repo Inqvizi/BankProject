@@ -21,8 +21,10 @@ namespace BankServer
             var logger = new FileLogger("logs.json");
             var transactionService = new TransactionService(repository, logger);
 
+            using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
             using (var serverSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
             {
+                Console.WriteLine($"Shared Memory created.");
                 Console.WriteLine($"Waiting for signals on: {AppConstants.NewDataSignalName}...");
 
                 while (true)
@@ -30,7 +32,9 @@ namespace BankServer
                     serverSignal.WaitOne();
 
                     Console.WriteLine("\n[!] Signal received. Processing request...");
+
                     ProcessClientRequest(transactionService);
+
                     Console.WriteLine("Waiting for next request...");
                 }
             }
@@ -53,6 +57,13 @@ namespace BankServer
                         stream.Read(buffer, 0, buffer.Length);
 
                         string jsonRequest = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
+
+                        if (string.IsNullOrWhiteSpace(jsonRequest))
+                        {
+                            Console.WriteLine("Error: Received empty data.");
+                            return;
+                        }
+
                         var request = JsonSerializer.Deserialize<TransactionRequest>(jsonRequest);
 
                         Console.WriteLine($" -> Operation: {request.Type}, Account: {request.AccountNumber}, Amount: {request.Amount}");
@@ -66,8 +77,7 @@ namespace BankServer
                     using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
                     using (var stream = mmf.CreateViewStream())
                     {
-                        stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
-
+                        stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize); // Очистка
                         stream.Position = 0;
                         stream.Write(responseData, 0, responseData.Length);
                     }
@@ -84,6 +94,7 @@ namespace BankServer
                 }
             }
 
+            // Сигнал клієнту
             try
             {
                 using (var clientSignal = EventWaitHandle.OpenExisting(AppConstants.ClientWaitSignalName))
