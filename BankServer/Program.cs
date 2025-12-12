@@ -25,7 +25,7 @@ namespace BankServer
             using (var serverSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
             {
                 Console.WriteLine($"Shared Memory created.");
-                Console.WriteLine($"Waiting for signals on: {AppConstants.NewDataSignalName}...");
+                Console.WriteLine($"Waiting for signals.");
 
                 while (true)
                 {
@@ -65,6 +65,11 @@ namespace BankServer
                         }
 
                         var request = JsonSerializer.Deserialize<TransactionRequest>(jsonRequest);
+                        if (request is null)
+                        {
+                            Console.WriteLine("Error: Failed to deserialize request.");
+                            return;
+                        }
 
                         Console.WriteLine($" -> Operation: {request.Type}, Account: {request.AccountNumber}, Amount: {request.Amount}");
 
@@ -77,7 +82,7 @@ namespace BankServer
                     using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
                     using (var stream = mmf.CreateViewStream())
                     {
-                        stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize); // Очистка
+                        stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
                         stream.Position = 0;
                         stream.Write(responseData, 0, responseData.Length);
                     }
@@ -94,7 +99,6 @@ namespace BankServer
                 }
             }
 
-            // Сигнал клієнту
             try
             {
                 using (var clientSignal = EventWaitHandle.OpenExisting(AppConstants.ClientWaitSignalName))
