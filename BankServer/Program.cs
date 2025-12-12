@@ -1,38 +1,98 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using System.IO.MemoryMappedFiles;
-using BankShared.Constants;
+using System.Text.Json;
 using BankServer.Data;
 using BankServer.Services;
+using BankShared.Constants;
+using BankShared.DTOs;
+
 namespace BankServer
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Bank Server Started...");
+            Console.Title = "Bank Server";
+            Console.WriteLine("Bank Server Started..");
 
-            Console.WriteLine("Server is running. Press Enter to exit...");
-            Console.ReadLine();
-            StartIpcListener();
-        }
-        public static void StartIpcListener() 
-        {
-            Console.WriteLine("Server: Starting Event Loop Listener [B4]...");
-            using (var newDataSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
-            using (var mutex = new Mutex(false, AppConstants.MutexName))
-            using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
+            var repository = new BankRepository();
+            var transactionService = new TransactionService(repository);
+
+            using (var serverSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
             {
-                Console.WriteLine($"Server listening for signal: {AppConstants.NewDataSignalName}");
+                Console.WriteLine($"Waiting for signals on: {AppConstants.NewDataSignalName}...");
+
                 while (true)
                 {
-                    // Блокуюча операція, очікує на сигнал від Клієнта
-                    newDataSignal.WaitOne(); 
+                    serverSignal.WaitOne();
 
-                    // Записати повідомлення "Запит отримано" в консоль після пробудження.
-                    Console.WriteLine("Server: Request received! Starting processing... [B4]");
-
+                    Console.WriteLine("\n[!] Signal received. Processing request...");
+                    ProcessClientRequest(transactionService);
+                    Console.WriteLine("Waiting for next request...");
                 }
+            }
+        }
+
+        static void ProcessClientRequest(TransactionService service)
+        {
+            using (var mutex = new Mutex(false, AppConstants.MutexName))
+            {
+                TransactionResponse response = null;
+
+                try
+                {
+                    mutex.WaitOne();
+
+                    using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
+                    using (var stream = mmf.CreateViewStream())
+                    {
+                        byte[] buffer = new byte[AppConstants.MemoryBufferSize];
+                        stream.Read(buffer, 0, buffer.Length);
+
+                        string jsonRequest = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
+                        var request = JsonSerializer.Deserialize<TransactionRequest>(jsonRequest);
+
+                        Console.WriteLine($" -> Operation: {request.Type}, Account: {request.AccountNumber}, Amount: {request.Amount}");
+
+                        response = service.ProcessRequest(request);
+                    }
+
+                    string jsonResponse = JsonSerializer.Serialize(response);
+                    byte[] responseData = Encoding.UTF8.GetBytes(jsonResponse);
+
+                    using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
+                    using (var stream = mmf.CreateViewStream())
+                    {
+                        stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
+
+                        stream.Position = 0;
+                        stream.Write(responseData, 0, responseData.Length);
+                    }
+
+                    Console.WriteLine($" -> Result sent: {response.ResultStatus}. New Balance: {response.NewBalance}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+                finally
+                {
+                    mutex.ReleaseMutex();
+                }
+            }
+
+            try
+            {
+                using (var clientSignal = EventWaitHandle.OpenExisting(AppConstants.ClientWaitSignalName))
+                {
+                    clientSignal.Set();
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Warning: Client signal not found (Client timeout?).");
             }
         }
     }
