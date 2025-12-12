@@ -4,8 +4,44 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     Title="Midnight Finance"
-    Width="450"
-    Height="600">
+    Width="1200"
+    Height="750"
+    MinWidth="1000"
+    MinHeight="650"
+    WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style x:Key="TransactionItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceElevatedBrush}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CurrencyCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource SurfaceElevatedBrush}"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource BrandPrimaryBrush}"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
 
     <Border
         Background="{StaticResource BackgroundGradientBrush}"
@@ -18,8 +54,8 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!--  Заголовок з градієнтом  -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,40">
+            <!-- Заголовок -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,30">
                 <TextBlock
                     HorizontalAlignment="Center"
                     FontSize="42"
@@ -42,135 +78,547 @@
                     Text="FINANCE" />
             </StackPanel>
 
-            <!--  Картка  -->
-            <materialDesign:Card
-                Grid.Row="1"
-                Padding="30"
-                Background="{StaticResource SurfaceBrush}"
-                UniformCornerRadius="15">
+            <!-- Основний контент -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.3*" />
+                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="0.8*" />
+                </Grid.ColumnDefinitions>
 
-                <materialDesign:Card.Effect>
-                    <DropShadowEffect
-                        BlurRadius="30"
-                        Opacity="0.3"
-                        ShadowDepth="0"
-                        Color="#6C63FF" />
-                </materialDesign:Card.Effect>
+                <!-- Ліва панель - Операції -->
+                <materialDesign:Card
+                    Grid.Column="0"
+                    Padding="25"
+                    Background="{StaticResource SurfaceBrush}"
+                    UniformCornerRadius="15">
+                    <materialDesign:Card.Effect>
+                        <DropShadowEffect
+                            BlurRadius="30"
+                            Opacity="0.3"
+                            ShadowDepth="0"
+                            Color="#6C63FF" />
+                    </materialDesign:Card.Effect>
 
-                <StackPanel>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <!--  Account ID  -->
-                    <TextBox
-                        Height="56"
-                        Margin="0,0,0,25"
-                        materialDesign:HintAssist.Foreground="{StaticResource TextSecondaryBrush}"
-                        materialDesign:HintAssist.Hint="Account ID"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        FontSize="16"
-                        Foreground="{StaticResource TextPrimaryBrush}"
-                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        Text="{Binding AccountNumber}" />
+                        <!-- Вибір акаунту -->
+                        <StackPanel Grid.Row="0">
+                            <TextBlock 
+                                Text="SELECT ACCOUNT"
+                                FontSize="14"
+                                FontWeight="Bold"
+                                Foreground="{StaticResource BrandSecondaryBrush}"
+                                Margin="0,0,0,10"/>
 
-                    <!--  Amount  -->
-                    <TextBox
-                        Height="56"
-                        Margin="0,0,0,40"
-                        materialDesign:HintAssist.Foreground="{StaticResource TextSecondaryBrush}"
-                        materialDesign:HintAssist.Hint="Amount ($)"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        FontSize="16"
-                        Foreground="{StaticResource TextPrimaryBrush}"
-                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                        Text="{Binding AmountToEnter}" />
+                            <ComboBox
+                                Height="56"
+                                Margin="0,0,0,20"
+                                ItemsSource="{Binding Accounts}"
+                                SelectedItem="{Binding SelectedAccount}"
+                                materialDesign:HintAssist.Hint="Choose account"
+                                FontSize="16"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Style="{StaticResource MaterialDesignOutlinedComboBox}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayName}" FontSize="14"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
 
-                    <!--  Deposit button  -->
-                    <Button
-                        Height="56"
-                        Margin="0,0,0,15"
-                        BorderThickness="0"
-                        Command="{Binding DepositCommand}"
-                        Content="DEPOSIT"
-                        Cursor="Hand"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="White">
-                        <Button.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Offset="0" Color="#00FFA3" />
-                                <GradientStop Offset="1" Color="#00D9FF" />
-                            </LinearGradientBrush>
-                        </Button.Background>
-                        <Button.Effect>
-                            <DropShadowEffect
-                                BlurRadius="20"
-                                Opacity="0.5"
-                                ShadowDepth="0"
-                                Color="#00FFA3" />
-                        </Button.Effect>
-                        <Button.Style>
-                            <Style BasedOn="{StaticResource MaterialDesignRaisedButton}" TargetType="Button">
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect
-                                                    BlurRadius="30"
-                                                    Opacity="0.8"
-                                                    ShadowDepth="0"
-                                                    Color="#00FFA3" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                        <!-- Баланс -->
+                        <Border 
+                            Grid.Row="1"
+                            Background="{StaticResource BackgroundMidBrush}"
+                            CornerRadius="10"
+                            Padding="20,15"
+                            Margin="0,0,0,25">
+                            <StackPanel>
+                                <TextBlock 
+                                    Text="CURRENT BALANCE"
+                                    FontSize="12"
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    Margin="0,0,0,5"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock 
+                                        Text="$"
+                                        FontSize="32"
+                                        FontWeight="Bold"
+                                        Foreground="{StaticResource BrandSecondaryBrush}"
+                                        Margin="0,0,5,0"/>
+                                    <TextBlock 
+                                        Text="{Binding Balance, StringFormat=N2}"
+                                        FontSize="32"
+                                        FontWeight="Bold"
+                                        Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    <Button
+                                        Width="32"
+                                        Height="32"
+                                        Margin="15,0,0,0"
+                                        Padding="0"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Command="{Binding RefreshCommand}"
+                                        ToolTip="Refresh balance">
+                                        <materialDesign:PackIcon 
+                                            Kind="Refresh"
+                                            Width="20"
+                                            Height="20"
+                                            Foreground="{StaticResource BrandPrimaryBrush}"/>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
 
-                    <!--  Withdraw button  -->
-                    <Button
-                        Height="56"
-                        BorderThickness="0"
-                        Command="{Binding WithdrawCommand}"
-                        Content="WITHDRAW"
-                        Cursor="Hand"
-                        FontSize="16"
-                        FontWeight="Bold"
-                        Foreground="White">
-                        <Button.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Offset="0" Color="#FF3366" />
-                                <GradientStop Offset="1" Color="#FF6B9D" />
-                            </LinearGradientBrush>
-                        </Button.Background>
-                        <Button.Effect>
-                            <DropShadowEffect
-                                BlurRadius="20"
-                                Opacity="0.5"
-                                ShadowDepth="0"
-                                Color="#FF3366" />
-                        </Button.Effect>
-                        <Button.Style>
-                            <Style BasedOn="{StaticResource MaterialDesignRaisedButton}" TargetType="Button">
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect
-                                                    BlurRadius="30"
-                                                    Opacity="0.8"
-                                                    ShadowDepth="0"
-                                                    Color="#FF3366" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                        <!-- Режим переказу або звичайних операцій -->
+                        <StackPanel Grid.Row="2">
+                            <!-- Toggle Transfer Mode -->
+                            <Button
+                                Height="45"
+                                Margin="0,0,0,15"
+                                Command="{Binding ToggleTransferModeCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                BorderBrush="{StaticResource BrandPrimaryBrush}"
+                                Foreground="{StaticResource TextPrimaryBrush}">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon 
+                                        Kind="SwapHorizontal"
+                                        Width="20"
+                                        Height="20"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"/>
+                                    <TextBlock>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="TRANSFER MODE"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsTransferMode}" Value="True">
+                                                        <Setter Property="Text" Value="NORMAL MODE"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Button>
 
-                </StackPanel>
-            </materialDesign:Card>
+                            <!-- Transfer Panel -->
+                            <StackPanel Visibility="{Binding IsTransferMode, Converter={StaticResource BoolToVis}}">
+                                <ComboBox
+                                    Height="56"
+                                    Margin="0,0,0,15"
+                                    ItemsSource="{Binding TransferAccounts}"
+                                    SelectedItem="{Binding TransferToAccount}"
+                                    materialDesign:HintAssist.Hint="Transfer to account"
+                                    FontSize="16"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    Style="{StaticResource MaterialDesignOutlinedComboBox}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="14"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
 
+                                <TextBox
+                                    Height="56"
+                                    Margin="0,0,0,15"
+                                    materialDesign:HintAssist.Hint="Transfer amount ($)"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    FontSize="16"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                    Text="{Binding TransferAmount}" />
+
+                                <Button
+                                    Height="56"
+                                    Margin="0,0,0,20"
+                                    BorderThickness="0"
+                                    Command="{Binding TransferCommand}"
+                                    Content="🔄 TRANSFER MONEY"
+                                    Cursor="Hand"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
+                                    <Button.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Offset="0" Color="#6C63FF" />
+                                            <GradientStop Offset="1" Color="#8B85FF" />
+                                        </LinearGradientBrush>
+                                    </Button.Background>
+                                    <Button.Effect>
+                                        <DropShadowEffect
+                                            BlurRadius="20"
+                                            Opacity="0.5"
+                                            ShadowDepth="0"
+                                            Color="#6C63FF" />
+                                    </Button.Effect>
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Normal Operations Panel -->
+                            <StackPanel>
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTransferMode}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <TextBox
+                                    Height="56"
+                                    Margin="0,0,0,20"
+                                    materialDesign:HintAssist.Hint="Amount ($)"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    FontSize="16"
+                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                    Text="{Binding AmountToEnter}" />
+
+                                <Button
+                                    Height="56"
+                                    Margin="0,0,0,12"
+                                    BorderThickness="0"
+                                    Command="{Binding DepositCommand}"
+                                    Content="💰 DEPOSIT"
+                                    Cursor="Hand"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
+                                    <Button.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Offset="0" Color="#00FFA3" />
+                                            <GradientStop Offset="1" Color="#00D9FF" />
+                                        </LinearGradientBrush>
+                                    </Button.Background>
+                                    <Button.Effect>
+                                        <DropShadowEffect BlurRadius="20" Opacity="0.5" ShadowDepth="0" Color="#00FFA3" />
+                                    </Button.Effect>
+                                </Button>
+
+                                <Button
+                                    Height="56"
+                                    Margin="0,0,0,20"
+                                    BorderThickness="0"
+                                    Command="{Binding WithdrawCommand}"
+                                    Content="💸 WITHDRAW"
+                                    Cursor="Hand"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="White"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
+                                    <Button.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Offset="0" Color="#FF3366" />
+                                            <GradientStop Offset="1" Color="#FF6B9D" />
+                                        </LinearGradientBrush>
+                                    </Button.Background>
+                                    <Button.Effect>
+                                        <DropShadowEffect BlurRadius="20" Opacity="0.5" ShadowDepth="0" Color="#FF3366" />
+                                    </Button.Effect>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Статус -->
+                        <Border 
+                            Grid.Row="5"
+                            Background="{StaticResource BackgroundMidBrush}"
+                            CornerRadius="8"
+                            Padding="15,10">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon 
+                                    Kind="InformationOutline"
+                                    Width="20"
+                                    Height="20"
+                                    Foreground="{StaticResource InfoBrush}"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center"/>
+                                <TextBlock 
+                                    Text="{Binding Log}"
+                                    FontSize="12"
+                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                    TextWrapping="Wrap"
+                                    VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Центральна панель - Історія транзакцій -->
+                <materialDesign:Card
+                    Grid.Column="2"
+                    Padding="25"
+                    Background="{StaticResource SurfaceBrush}"
+                    UniformCornerRadius="15">
+                    <materialDesign:Card.Effect>
+                        <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="#00F5FF" />
+                    </materialDesign:Card.Effect>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon 
+                                    Kind="History"
+                                    Width="24"
+                                    Height="24"
+                                    Foreground="{StaticResource BrandSecondaryBrush}"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center"/>
+                                <TextBlock 
+                                    Text="TRANSACTION HISTORY"
+                                    FontSize="16"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource BrandSecondaryBrush}"
+                                    VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Border Height="2" Margin="0,10,0,0" Background="{StaticResource DividerBrush}"/>
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding TransactionHistory}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource TransactionItemStyle}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <Border 
+                                                    Grid.RowSpan="2"
+                                                    Width="40"
+                                                    Height="40"
+                                                    CornerRadius="20"
+                                                    Margin="0,0,15,0"
+                                                    VerticalAlignment="Center">
+                                                    <Border.Background>
+                                                        <SolidColorBrush Color="{StaticResource SuccessColor}" Opacity="0.2"/>
+                                                    </Border.Background>
+                                                    <materialDesign:PackIcon 
+                                                        Width="24"
+                                                        Height="24"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                        <materialDesign:PackIcon.Style>
+                                                            <Style TargetType="materialDesign:PackIcon">
+                                                                <Setter Property="Kind" Value="ArrowUp"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Type}" Value="Withdraw">
+                                                                        <Setter Property="Kind" Value="ArrowDown"/>
+                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </materialDesign:PackIcon.Style>
+                                                    </materialDesign:PackIcon>
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1">
+                                                    <TextBlock 
+                                                        Text="{Binding Type}"
+                                                        FontSize="13"
+                                                        FontWeight="Bold"
+                                                        Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    <TextBlock 
+                                                        Text="{Binding Timestamp, StringFormat='{}{0:MMM dd, HH:mm}'}"
+                                                        FontSize="10"
+                                                        Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="2" HorizontalAlignment="Right">
+                                                    <TextBlock FontSize="13" FontWeight="Bold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                                <Setter Property="Text" Value="{Binding Amount, StringFormat='+${0:N2}'}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Type}" Value="Withdraw">
+                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                                        <Setter Property="Text" Value="{Binding Amount, StringFormat='-${0:N2}'}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                    <TextBlock 
+                                                        Text="{Binding Balance, StringFormat='${0:N2}'}"
+                                                        FontSize="9"
+                                                        Foreground="{StaticResource TextSecondaryBrush}"
+                                                        HorizontalAlignment="Right"/>
+                                                </StackPanel>
+
+                                                <Border 
+                                                    Grid.Row="1"
+                                                    Grid.Column="1"
+                                                    Grid.ColumnSpan="2"
+                                                    Margin="0,5,0,0"
+                                                    Padding="6,2"
+                                                    CornerRadius="3"
+                                                    HorizontalAlignment="Left">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background">
+                                                                <Setter.Value>
+                                                                    <SolidColorBrush Color="{StaticResource SuccessColor}" Opacity="0.15"/>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock 
+                                                        Text="{Binding Status}"
+                                                        FontSize="9"
+                                                        FontWeight="Medium"
+                                                        Foreground="{StaticResource SuccessBrush}"/>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </materialDesign:Card>
+
+                <!-- Права панель - Курси валют -->
+                <materialDesign:Card
+                    Grid.Column="4"
+                    Padding="20"
+                    Background="{StaticResource SurfaceBrush}"
+                    UniformCornerRadius="15">
+                    <materialDesign:Card.Effect>
+                        <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="#FFD60A" />
+                    </materialDesign:Card.Effect>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon 
+                                    Kind="CurrencyUsd"
+                                    Width="22"
+                                    Height="22"
+                                    Foreground="{StaticResource WarningBrush}"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"/>
+                                <TextBlock 
+                                    Text="CURRENCY"
+                                    FontSize="14"
+                                    FontWeight="Bold"
+                                    Foreground="{StaticResource WarningBrush}"
+                                    VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Border Height="2" Margin="0,8,0,0" Background="{StaticResource DividerBrush}"/>
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding CurrencyRates}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource CurrencyCardStyle}">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Flag -->
+                                                <TextBlock 
+                                                    Grid.RowSpan="2"
+                                                    Text="{Binding Flag}"
+                                                    FontSize="28"
+                                                    Margin="0,0,12,0"
+                                                    VerticalAlignment="Center"/>
+
+                                                <!-- Currency Code -->
+                                                <TextBlock 
+                                                    Grid.Column="1"
+                                                    Text="{Binding CurrencyCode}"
+                                                    FontSize="14"
+                                                    FontWeight="Bold"
+                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                                                <!-- Currency Name -->
+                                                <TextBlock 
+                                                    Grid.Row="1"
+                                                    Grid.Column="1"
+                                                    Text="{Binding CurrencyName}"
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                                                <!-- Rate -->
+                                                <StackPanel Grid.Column="2" Grid.RowSpan="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                    <TextBlock 
+                                                        Text="{Binding Rate, StringFormat='{}{0:F2}'}"
+                                                        FontSize="15"
+                                                        FontWeight="Bold"
+                                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                                        HorizontalAlignment="Right"/>
+                                                    <TextBlock 
+                                                        FontSize="10"
+                                                        FontWeight="SemiBold"
+                                                        HorizontalAlignment="Right">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                                <Setter Property="Text" Value="{Binding Change, StringFormat='+{0:F3}'}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Change, Converter={StaticResource NegativeConverter}}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                                        <Setter Property="Text" Value="{Binding Change, StringFormat='{}{0:F3}'}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </materialDesign:Card>
+            </Grid>
         </Grid>
     </Border>
 </Window>
