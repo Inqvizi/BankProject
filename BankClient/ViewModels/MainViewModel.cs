@@ -11,6 +11,7 @@ using System.Transactions;
 using BankShared.Enums;
 using BankShared.DTOs;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace BankClient.ViewModels
 {
@@ -63,9 +64,9 @@ namespace BankClient.ViewModels
         public ICommand WithdrawCommand { get; set; }
 
 
-        public MainViewModel() { 
-        var _bankService = new  BankClientService();
-        DepositCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Deposit));
+        public MainViewModel() {
+            _bankClient = new BankClientService();
+            DepositCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Deposit));
         WithdrawCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Withdraw));
         
         }
@@ -77,7 +78,7 @@ namespace BankClient.ViewModels
             }
             IsBusy = true;
             Log = "Transaction ongoing";
-
+            MessageBox.Show(Log);
             try
             {
                 var request = new TransactionRequest()
