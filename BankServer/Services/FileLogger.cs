@@ -25,23 +25,37 @@ namespace BankServer.Services
                 Message = message
             };
 
-            var json = JsonSerializer.Serialize(logEntry);
+            string json = JsonSerializer.Serialize(logEntry);
 
-            // Дозапис рядка у файл
-            using (var writer = new StreamWriter(_filePath, append: true))
+            try
             {
-                writer.WriteLine(json);
+                using (var writer = new StreamWriter(_filePath, append: true))
+                {
+                    writer.WriteLine(json);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Logger Error] Could not write to log file: {ex.Message}");
             }
         }
-
         private void EnsureFileExists()
         {
-            var dir = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
+            try
+            {
+                var dir = Path.GetDirectoryName(_filePath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
 
-            if (!File.Exists(_filePath))
-                File.Create(_filePath).Dispose();
+                if (!File.Exists(_filePath))
+                {
+                    using (File.Create(_filePath)) { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Logger Error] Could not create log file: {ex.Message}");
+            }
         }
     }
 }

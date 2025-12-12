@@ -18,7 +18,8 @@ namespace BankServer
             Console.WriteLine("Bank Server Started..");
 
             var repository = new BankRepository();
-            var transactionService = new TransactionService(repository);
+            var logger = new FileLogger("logs.json");
+            var transactionService = new TransactionService(repository, logger);
 
             using (var serverSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
             {
