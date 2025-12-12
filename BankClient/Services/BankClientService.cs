@@ -13,64 +13,52 @@ namespace BankClient.Services
     {
         public TransactionResponse SendRequest(TransactionRequest request)
         {
-            using (var clientSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.ClientWaitSignalName))
+
+            using (var mutex = new Mutex(false, AppConstants.MutexName))
             {
-                using (var mutex = new Mutex(false, AppConstants.MutexName))
+                bool hasMutex = false;
+                try
                 {
+
                     try
                     {
-                        mutex.WaitOne();
+                        hasMutex = mutex.WaitOne(TimeSpan.FromSeconds(10));
+                        if (!hasMutex)
+                            return new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout" };
+                    }
+                    catch (AbandonedMutexException) { hasMutex = true; }
 
+                    using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
+                    using (var stream = mmf.CreateViewStream())
+                    {
                         string json = JsonSerializer.Serialize(request);
                         byte[] data = Encoding.UTF8.GetBytes(json);
 
-                        if (data.Length > AppConstants.MemoryBufferSize)
-                            throw new Exception("Request is too large for shared memory.");
+                        stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
 
-                        using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
-                        using (var stream = mmf.CreateViewStream())
-                        {
-                            stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
-                            stream.Position = 0;
-                            stream.Write(data, 0, data.Length);
-                        }
+                        stream.Position = 0;
+                        stream.Write(data, 0, data.Length);
                     }
-                    catch (AbandonedMutexException) { }
-                    catch (Exception ex)
-                    {
-                        throw new Exception($"Error writing to shared memory: {ex.Message}");
-                    }
-                    finally
-                    {
-                        mutex.ReleaseMutex();
-                    }
-                }
 
-                try
-                {
-                    using (var serverSignal = EventWaitHandle.OpenExisting(AppConstants.NewDataSignalName))
+                    using (var serverSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
                     {
                         serverSignal.Set();
                     }
-                }
-                catch (WaitHandleCannotBeOpenedException)
-                {
-                    return new TransactionResponse { ResultStatus = BankShared.Enums.TransactionResult.ServerError, Message = "Server is offline" };
-                }
 
-                if (!clientSignal.WaitOne(5000))
-                {
-                    return new TransactionResponse { ResultStatus = BankShared.Enums.TransactionResult.ServerError, Message = "Server timeout" };
-                }
+                    using (var clientSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.ClientWaitSignalName))
+                    {
+                        if (!clientSignal.WaitOne(TimeSpan.FromSeconds(10)))
+                        {
+                            return new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Server Timeout" };
+                        }
+                    }
 
-                try
-                {
+                    
                     using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
                     using (var stream = mmf.CreateViewStream())
                     {
                         byte[] buffer = new byte[AppConstants.MemoryBufferSize];
                         stream.Read(buffer, 0, buffer.Length);
-
                         string jsonResponse = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
 
                         return JsonSerializer.Deserialize<TransactionResponse>(jsonResponse);
@@ -78,7 +66,11 @@ namespace BankClient.Services
                 }
                 catch (Exception ex)
                 {
-                    return new TransactionResponse { ResultStatus = BankShared.Enums.TransactionResult.ServerError, Message = $"Read Error: {ex.Message}" };
+                    return new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = $"IPC Error: {ex.Message}" };
+                }
+                finally
+                {
+                    if (hasMutex) mutex.ReleaseMutex();
                 }
             }
         }
