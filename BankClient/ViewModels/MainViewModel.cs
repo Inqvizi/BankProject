@@ -26,10 +26,10 @@ namespace BankClient.ViewModels
         private readonly BankClientService _bankClient;
         private decimal _balance;
         private string _log;
-        private decimal _amountToEnter;
+        private string _amountToEnter;
         private bool _isBusy;
         private string _accountNumber;
-        public decimal AmountToEnter
+        public string AmountToEnter
         {
             get { return _amountToEnter; }
             set {  _amountToEnter = value; OnPropertyChanged(); }
@@ -64,10 +64,11 @@ namespace BankClient.ViewModels
         public ICommand WithdrawCommand { get; set; }
 
 
-        public MainViewModel() {
+        public MainViewModel() 
+        {
             _bankClient = new BankClientService();
             DepositCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Deposit));
-        WithdrawCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Withdraw));
+            WithdrawCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Withdraw));
         
         }
 
@@ -77,13 +78,18 @@ namespace BankClient.ViewModels
                 return;
             }
             IsBusy = true;
-            Log = "Transaction ongoing";
-            MessageBox.Show(Log);
             try
             {
+                if (!decimal.TryParse(AmountToEnter, out decimal validAmount))
+                {
+                    Log = "Error: Please enter a valid number";
+                    MessageBox.Show(Log);
+                    return;
+                }
+
                 var request = new TransactionRequest()
                 {
-                    Amount = _amountToEnter,
+                    Amount = validAmount,
                     Type = transactionType,
                     AccountNumber = _accountNumber
                 };
