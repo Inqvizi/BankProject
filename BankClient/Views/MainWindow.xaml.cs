@@ -8,8 +8,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-
-namespace BankServer
+using BankClient.ViewModels;
+namespace BankClient
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -19,6 +19,7 @@ namespace BankServer
         public MainWindow()
         {
             InitializeComponent();
+            DataContext = new MainViewModel();
         }
     }
 }

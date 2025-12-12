@@ -1,4 +1,6 @@
 <Solution>
   <Project Path="BankClient/BankClient.csproj" />
   <Project Path="BankServer/BankServer.csproj" />
+  <Project Path="BankShared/BankShared.csproj" Id="9c11eaf4-14c4-4773-91f9-282457c79d9b" />
+  <Project Path="BankTests/BankTests.csproj" Id="4a6906f7-16c2-43e4-a726-36a9b5aa36cc" />
 </Solution>
