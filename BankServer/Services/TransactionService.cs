@@ -8,17 +8,17 @@ namespace BankServer.Services
     public class TransactionService
     {
         private readonly BankRepository _repository;
+        private readonly FileLogger _fileLogger;
 
         private static Mutex _mutex = new Mutex(); 
-        public TransactionService(BankRepository repository)
+        public TransactionService(BankRepository repository, FileLogger fileLogger)
         {
             _repository = repository;
+            _fileLogger = fileLogger;
         }
 
-        // Головний метод обробки транзакцій
         public TransactionResponse ProcessRequest(TransactionRequest request)
         {
-            // Ініціалізація відповіді
             var response = new TransactionResponse
             {
                 AccountNumber = request.AccountNumber,
@@ -30,20 +30,17 @@ namespace BankServer.Services
 
             try
             {
-
-
-
-
-            
             // Пошук рахунку
             BankAccount? account = _repository.GetByNumber(request.AccountNumber);
             if (account == null)
             {
                 response.ResultStatus = TransactionResult.AccountNotFound;
                 response.Message = "Account not found.";
+
+                _fileLogger.LogTransaction($"FAILED: Account {request.AccountNumber} not found. Op: {request.Type}");
+
                 return response;
             }
-
 
             response.NewBalance = account.Balance;
 
@@ -52,6 +49,8 @@ namespace BankServer.Services
             {
                 response.ResultStatus = TransactionResult.InvalidAmount;
                 response.Message = "Amount must be greater than zero.";
+
+                _fileLogger.LogTransaction($"FAILED: Invalid amount {request.Amount} for {request.AccountNumber}");
                 return response;
             }
 
@@ -71,6 +70,9 @@ namespace BankServer.Services
                     response.ResultStatus = TransactionResult.InsufficientFunds;
                     response.Message = "Insufficient funds.";
                     response.NewBalance = account.Balance;
+                    
+                    _fileLogger.LogTransaction($"FAILED: Withdrawal of {request.Amount} from {request.AccountNumber} - Insufficient Funds");
+                    
                     return response;
                 }
                 response.Message = $"Withdrawal of {request.Amount} successful.";
@@ -78,6 +80,9 @@ namespace BankServer.Services
 
 
             response.NewBalance = account.Balance;
+            
+            _fileLogger.LogTransaction($"SUCCESS: {request.Type} {request.Amount} for {request.AccountNumber}. New Balance: {account.Balance}");
+            
             return response;
         }
             finally { _mutex.ReleaseMutex(); }
