@@ -37,7 +37,6 @@ namespace BankClient.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private decimal _rate;
-        private decimal _change;
 
         public string CurrencyCode { get; set; }
         public string CurrencyName { get; set; }
@@ -48,16 +47,6 @@ namespace BankClient.ViewModels
             set
             {
                 _rate = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public decimal Change
-        {
-            get => _change;
-            set
-            {
-                _change = value;
                 OnPropertyChanged();
             }
         }
@@ -81,23 +70,20 @@ namespace BankClient.ViewModels
 
         private readonly BankClientService _bankClient;
         private readonly CurrencyService _currencyService;
-        private readonly System.Threading.Timer _currencyUpdateTimer;
         private decimal _balance;
         private string _log;
         private string _amountToEnter;
         private bool _isBusy;
         private AccountInfo _selectedAccount;
-        private AccountInfo _transferToAccount;
-        private decimal _transferAmount;
+        private string _transferToAccountNumber;
+        private string _transferAmount;
         private bool _isTransferMode;
 
-        // Словник для зберігання історії кожного акаунта
         private Dictionary<string, ObservableCollection<TransactionHistoryItem>> _accountHistories;
 
         public ObservableCollection<AccountInfo> Accounts { get; set; }
         public ObservableCollection<TransactionHistoryItem> TransactionHistory { get; set; }
         public ObservableCollection<CurrencyRate> CurrencyRates { get; set; }
-        public ObservableCollection<AccountInfo> TransferAccounts { get; set; }
 
         public AccountInfo SelectedAccount
         {
@@ -110,18 +96,17 @@ namespace BankClient.ViewModels
                 {
                     Balance = value.Balance;
                     LoadAccountHistory(value.AccountNumber);
-                    UpdateTransferAccounts();
                 }
             }
         }
 
-        public AccountInfo TransferToAccount
+        public string TransferToAccountNumber
         {
-            get { return _transferToAccount; }
-            set { _transferToAccount = value; OnPropertyChanged(); }
+            get { return _transferToAccountNumber; }
+            set { _transferToAccountNumber = value; OnPropertyChanged(); }
         }
 
-        public decimal TransferAmount
+        public string TransferAmount
         {
             get { return _transferAmount; }
             set { _transferAmount = value; OnPropertyChanged(); }
@@ -170,23 +155,20 @@ namespace BankClient.ViewModels
 
             Accounts = new ObservableCollection<AccountInfo>
             {
-                new AccountInfo { AccountNumber = "1111", DisplayName = "💼 Main Account (1111)", Balance = 1000.00m },
-                new AccountInfo { AccountNumber = "2222", DisplayName = "💳 Savings Account (2222)", Balance = 500.50m },
-                new AccountInfo { AccountNumber = "3333", DisplayName = "🏦 Investment Account (3333)", Balance = 999999.00m }
+                new AccountInfo { AccountNumber = "1111", DisplayName = "Main Account (1111)", Balance = 1000.00m },
+                new AccountInfo { AccountNumber = "2222", DisplayName = "Savings Account (2222)", Balance = 500.50m },
+                new AccountInfo { AccountNumber = "3333", DisplayName = "Investment Account (3333)", Balance = 999999.00m }
             };
 
             TransactionHistory = new ObservableCollection<TransactionHistoryItem>();
-            TransferAccounts = new ObservableCollection<AccountInfo>();
             CurrencyRates = new ObservableCollection<CurrencyRate>();
 
-            // Ініціалізація історій для кожного акаунта
             _accountHistories = new Dictionary<string, ObservableCollection<TransactionHistoryItem>>();
             foreach (var account in Accounts)
             {
                 _accountHistories[account.AccountNumber] = new ObservableCollection<TransactionHistoryItem>();
             }
 
-            // Додамо тестові дані для демонстрації
             _accountHistories["1111"].Add(new TransactionHistoryItem
             {
                 Timestamp = DateTime.Now.AddDays(-2),
@@ -206,22 +188,13 @@ namespace BankClient.ViewModels
 
             DepositCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Deposit));
             WithdrawCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Withdraw));
-            RefreshCommand = new RelayCommand(_ => RefreshBalance());
+            RefreshCommand = new RelayCommand(async _ => await RefreshCurrencyRates());
             TransferCommand = new RelayCommand(async _ => await ExecuteTransfer());
             ToggleTransferModeCommand = new RelayCommand(_ => ToggleTransferMode());
 
             SelectedAccount = Accounts.First();
 
-            // Завантаження курсів валют
             _ = LoadCurrencyRatesAsync();
-
-            // Таймер для оновлення курсів кожні 60 секунд
-            _currencyUpdateTimer = new System.Threading.Timer(
-                async _ => await UpdateCurrencyRatesAsync(),
-                null,
-                TimeSpan.FromSeconds(60),
-                TimeSpan.FromSeconds(60)
-            );
 
             Log = "Ready";
         }
@@ -230,7 +203,6 @@ namespace BankClient.ViewModels
         {
             TransactionHistory.Clear();
 
-            // Завантажуємо збережену історію для цього акаунта
             if (_accountHistories.ContainsKey(accountNumber))
             {
                 foreach (var transaction in _accountHistories[accountNumber])
@@ -251,71 +223,30 @@ namespace BankClient.ViewModels
                 {
                     CurrencyRates.Clear();
 
-                    // EUR
-                    if (rates.ContainsKey("EUR"))
+                    var currenciesToDisplay = new[]
                     {
-                        CurrencyRates.Add(new CurrencyRate
+                        ("EUR", "Euro", "🇪🇺"),
+                        ("GBP", "British Pound", "🇬🇧"),
+                        ("JPY", "Japanese Yen", "🇯🇵"),
+                        ("CHF", "Swiss Franc", "🇨🇭"),
+                        ("CAD", "Canadian Dollar", "🇨🇦")
+                    };
+
+                    foreach (var (code, name, flag) in currenciesToDisplay)
+                    {
+                        if (rates.ContainsKey(code))
                         {
-                            CurrencyCode = "EUR",
-                            CurrencyName = "Euro",
-                            Rate = rates["EUR"],
-                            Change = CalculateRandomChange(),
-                            Flag = "🇪🇺"
-                        });
+                            CurrencyRates.Add(new CurrencyRate
+                            {
+                                CurrencyCode = code,
+                                CurrencyName = name,
+                                Rate = rates[code],
+                                Flag = flag
+                            });
+                        }
                     }
 
-                    // GBP
-                    if (rates.ContainsKey("GBP"))
-                    {
-                        CurrencyRates.Add(new CurrencyRate
-                        {
-                            CurrencyCode = "GBP",
-                            CurrencyName = "British Pound",
-                            Rate = rates["GBP"],
-                            Change = CalculateRandomChange(),
-                            Flag = "🇬🇧"
-                        });
-                    }
-
-                    // JPY
-                    if (rates.ContainsKey("JPY"))
-                    {
-                        CurrencyRates.Add(new CurrencyRate
-                        {
-                            CurrencyCode = "JPY",
-                            CurrencyName = "Japanese Yen",
-                            Rate = rates["JPY"],
-                            Change = CalculateRandomChange(),
-                            Flag = "🇯🇵"
-                        });
-                    }
-
-                    // CHF
-                    if (rates.ContainsKey("CHF"))
-                    {
-                        CurrencyRates.Add(new CurrencyRate
-                        {
-                            CurrencyCode = "CHF",
-                            CurrencyName = "Swiss Franc",
-                            Rate = rates["CHF"],
-                            Change = CalculateRandomChange(),
-                            Flag = "🇨🇭"
-                        });
-                    }
-
-                    if (rates.ContainsKey("CAD"))
-                    {
-                        CurrencyRates.Add(new CurrencyRate
-                        {
-                            CurrencyCode = "CAD",
-                            CurrencyName = "Canadian Dollar",
-                            Rate = rates["CAD"],
-                            Change = CalculateRandomChange(),
-                            Flag = "🇨🇦"
-                        });
-                    }
-
-                    Log = $"{DateTime.Now:HH:mm:ss} - Currency rates updated";
+                    Log = $"{DateTime.Now:HH:mm:ss} - Currency rates loaded";
                 });
             }
             catch (Exception ex)
@@ -325,62 +256,20 @@ namespace BankClient.ViewModels
             }
         }
 
-        private async Task UpdateCurrencyRatesAsync()
+        private async Task RefreshCurrencyRates()
         {
-            try
-            {
-                var rates = await _currencyService.GetLatestRatesAsync();
-
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (var currencyRate in CurrencyRates)
-                    {
-                        if (rates.ContainsKey(currencyRate.CurrencyCode))
-                        {
-                            var oldRate = currencyRate.Rate;
-                            var newRate = rates[currencyRate.CurrencyCode];
-
-                            currencyRate.Rate = newRate;
-                            currencyRate.Change = newRate - oldRate;
-                        }
-                    }
-                    OnPropertyChanged(nameof(CurrencyRates));
-                });
-            }
-            catch
-            {
-                // Ігноруємо помилки при автоматичному оновленні
-            }
+            Log = "Refreshing currency rates...";
+            await LoadCurrencyRatesAsync();
         }
 
         private void LoadFallbackCurrencyRates()
         {
             CurrencyRates.Clear();
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "EUR", CurrencyName = "Euro", Rate = 0.92m, Change = 0.012m, Flag = "🇪🇺" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "GBP", CurrencyName = "British Pound", Rate = 0.79m, Change = -0.005m, Flag = "🇬🇧" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "JPY", CurrencyName = "Japanese Yen", Rate = 149.50m, Change = 0.85m, Flag = "🇯🇵" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CHF", CurrencyName = "Swiss Franc", Rate = 0.88m, Change = 0.003m, Flag = "🇨🇭" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CAD", CurrencyName = "Canadian Dollar", Rate = 1.36m, Change = -0.018m, Flag = "🇨🇦" });
-        }
-
-        private decimal CalculateRandomChange()
-        {
-            var random = new Random();
-            return (decimal)(random.NextDouble() * 0.02 - 0.01); // Від -0.01 до +0.01
-        }
-
-        private void UpdateTransferAccounts()
-        {
-            TransferAccounts.Clear();
-            foreach (var account in Accounts)
-            {
-                if (account.AccountNumber != SelectedAccount?.AccountNumber)
-                {
-                    TransferAccounts.Add(account);
-                }
-            }
-
-            TransferToAccount = TransferAccounts.FirstOrDefault();
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "EUR", CurrencyName = "Euro", Rate = 0.92m, Flag = "🇪🇺" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "GBP", CurrencyName = "British Pound", Rate = 0.79m, Flag = "🇬🇧" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "JPY", CurrencyName = "Japanese Yen", Rate = 149.50m, Flag = "🇯🇵" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CHF", CurrencyName = "Swiss Franc", Rate = 0.88m, Flag = "🇨🇭" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CAD", CurrencyName = "Canadian Dollar", Rate = 1.36m, Flag = "🇨🇦" });
         }
 
         private void ToggleTransferMode()
@@ -388,8 +277,8 @@ namespace BankClient.ViewModels
             IsTransferMode = !IsTransferMode;
             if (IsTransferMode)
             {
-                UpdateTransferAccounts();
-                Log = "Transfer mode activated";
+                TransferToAccountNumber = "";
+                Log = "Transfer mode activated. Enter recipient account number.";
             }
             else
             {
@@ -399,20 +288,20 @@ namespace BankClient.ViewModels
 
         private async Task ExecuteTransfer()
         {
-            if (IsBusy || SelectedAccount == null || TransferToAccount == null)
+            if (IsBusy || SelectedAccount == null)
             {
                 return;
             }
 
-            if (TransferAmount <= 0)
+            if (string.IsNullOrWhiteSpace(TransferToAccountNumber))
             {
-                Log = "Please enter a valid transfer amount";
+                Log = "Please enter recipient account number";
                 return;
             }
 
-            if (TransferAmount > Balance)
+            if (TransferToAccountNumber == SelectedAccount.AccountNumber)
             {
-                Log = "Insufficient funds for transfer";
+                Log = "Cannot transfer to the same account";
                 return;
             }
 
@@ -421,77 +310,78 @@ namespace BankClient.ViewModels
 
             try
             {
-                // Зняття з поточного рахунку
-                var withdrawRequest = new TransactionRequest()
+                if (!decimal.TryParse(TransferAmount, out decimal validAmount))
                 {
-                    Amount = TransferAmount,
-                    Type = TransactionType.Withdraw,
-                    AccountNumber = SelectedAccount.AccountNumber
+                    Log = "Error: Please enter a valid number";
+                    MessageBox.Show(Log);
+                    return;
+                }
+
+                if (validAmount <= 0)
+                {
+                    Log = "Please enter a valid transfer amount";
+                    return;
+                }
+
+                if (validAmount > Balance)
+                {
+                    Log = "Insufficient funds for transfer";
+                    return;
+                }
+
+                var transferRequest = new TransferRequest
+                {
+                    FromAccountNumber = SelectedAccount.AccountNumber,
+                    ToAccountNumber = TransferToAccountNumber.Trim(),
+                    Amount = validAmount
                 };
 
-                TransactionResponse withdrawResponse = await Task.Run(() => _bankClient.SendRequest(withdrawRequest));
+                TransferResponse response = await Task.Run(() => _bankClient.SendTransferRequest(transferRequest));
 
-                if (withdrawResponse.ResultStatus == TransactionResult.Success)
+                if (response.ResultStatus == TransactionResult.Success)
                 {
-                    // Поповнення цільового рахунку
-                    var depositRequest = new TransactionRequest()
+                    Balance = response.FromAccountNewBalance;
+                    SelectedAccount.Balance = response.FromAccountNewBalance;
+
+                    var targetAccount = Accounts.FirstOrDefault(a => a.AccountNumber == TransferToAccountNumber.Trim());
+                    if (targetAccount != null)
                     {
-                        Amount = TransferAmount,
-                        Type = TransactionType.Deposit,
-                        AccountNumber = TransferToAccount.AccountNumber
+                        targetAccount.Balance = response.ToAccountNewBalance;
+                    }
+
+                    var senderHistoryItem = new TransactionHistoryItem
+                    {
+                        Timestamp = DateTime.Now,
+                        Type = $"Transfer to {TransferToAccountNumber}",
+                        Amount = validAmount,
+                        Balance = response.FromAccountNewBalance,
+                        Status = "Success"
                     };
 
-                    TransactionResponse depositResponse = await Task.Run(() => _bankClient.SendRequest(depositRequest));
+                    TransactionHistory.Insert(0, senderHistoryItem);
+                    _accountHistories[SelectedAccount.AccountNumber].Insert(0, senderHistoryItem);
 
-                    if (depositResponse.ResultStatus == TransactionResult.Success)
+                    if (_accountHistories.ContainsKey(TransferToAccountNumber.Trim()))
                     {
-                        // Оновлюємо баланси
-                        Balance = withdrawResponse.NewBalance;
-                        SelectedAccount.Balance = withdrawResponse.NewBalance;
-
-                        var targetAccount = Accounts.FirstOrDefault(a => a.AccountNumber == TransferToAccount.AccountNumber);
-                        if (targetAccount != null)
-                        {
-                            targetAccount.Balance = depositResponse.NewBalance;
-                        }
-
-                        // Додаємо до історії відправника
-                        var senderHistoryItem = new TransactionHistoryItem
-                        {
-                            Timestamp = DateTime.Now,
-                            Type = $"Transfer to {TransferToAccount.DisplayName}",
-                            Amount = TransferAmount,
-                            Balance = withdrawResponse.NewBalance,
-                            Status = "Success"
-                        };
-
-                        TransactionHistory.Insert(0, senderHistoryItem);
-                        _accountHistories[SelectedAccount.AccountNumber].Insert(0, senderHistoryItem);
-
-                        // Додаємо до історії отримувача
                         var receiverHistoryItem = new TransactionHistoryItem
                         {
                             Timestamp = DateTime.Now,
-                            Type = $"Transfer from {SelectedAccount.DisplayName}",
-                            Amount = TransferAmount,
-                            Balance = depositResponse.NewBalance,
+                            Type = $"Transfer from {SelectedAccount.AccountNumber}",
+                            Amount = validAmount,
+                            Balance = response.ToAccountNewBalance,
                             Status = "Success"
                         };
 
-                        _accountHistories[TransferToAccount.AccountNumber].Insert(0, receiverHistoryItem);
+                        _accountHistories[TransferToAccountNumber.Trim()].Insert(0, receiverHistoryItem);
+                    }
 
-                        Log = $"{DateTime.Now:HH:mm:ss} - Transfer of ${TransferAmount:N2} successful";
-                        TransferAmount = 0;
-                        IsTransferMode = false;
-                    }
-                    else
-                    {
-                        Log = $"Transfer failed: {depositResponse.Message}";
-                    }
+                    Log = $"{DateTime.Now:HH:mm:ss} - Transfer of ${TransferAmount:N2} to {TransferToAccountNumber} successful";
+                    TransferToAccountNumber = "";
+                    IsTransferMode = false;
                 }
                 else
                 {
-                    Log = $"Transfer failed: {withdrawResponse.Message}";
+                    Log = $"Transfer failed: {response.Message}";
                 }
             }
             catch (Exception ex)
@@ -501,15 +391,6 @@ namespace BankClient.ViewModels
             finally
             {
                 IsBusy = false;
-            }
-        }
-
-        private void RefreshBalance()
-        {
-            if (SelectedAccount != null)
-            {
-                // В реальному додатку тут був би запит на сервер для отримання поточного балансу
-                Log = $"{DateTime.Now:HH:mm:ss} - Balance refreshed";
             }
         }
 
@@ -546,7 +427,6 @@ namespace BankClient.ViewModels
                     Balance = transactionResponse.NewBalance;
                     SelectedAccount.Balance = transactionResponse.NewBalance;
 
-                    // Додаємо до історії поточного акаунта
                     var historyItem = new TransactionHistoryItem
                     {
                         Timestamp = DateTime.Now,
@@ -565,7 +445,6 @@ namespace BankClient.ViewModels
                 {
                     Log = $"{DateTime.Now:HH:mm:ss} - Failed: {transactionResponse.Message}";
 
-                    // Додаємо невдалу транзакцію до історії
                     var historyItem = new TransactionHistoryItem
                     {
                         Timestamp = DateTime.Now,

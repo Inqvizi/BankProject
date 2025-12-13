@@ -4,40 +4,38 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     Title="Midnight Finance"
-    Width="1200"
-    Height="750"
-    MinWidth="1000"
-    MinHeight="650"
+    Width="1400"
+    Height="1000"
     WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
         <Style x:Key="TransactionItemStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource SurfaceElevatedBrush}"/>
-            <Setter Property="CornerRadius" Value="8"/>
-            <Setter Property="Padding" Value="15,10"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceElevatedBrush}" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="15,10" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                    <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="CurrencyCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource SurfaceElevatedBrush}"/>
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="15,12"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="{StaticResource SurfaceElevatedBrush}" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="15,12" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource BrandPrimaryBrush}"/>
-                    <Setter Property="BorderThickness" Value="2"/>
+                    <Setter Property="BorderBrush" Value="{StaticResource BrandPrimaryBrush}" />
+                    <Setter Property="BorderThickness" Value="2" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -54,7 +52,6 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Заголовок -->
             <StackPanel Grid.Row="0" Margin="0,0,0,30">
                 <TextBlock
                     HorizontalAlignment="Center"
@@ -78,7 +75,6 @@
                     Text="FINANCE" />
             </StackPanel>
 
-            <!-- Основний контент -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.3*" />
@@ -88,7 +84,6 @@
                     <ColumnDefinition Width="0.8*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Ліва панель - Операції -->
                 <materialDesign:Card
                     Grid.Column="0"
                     Padding="25"
@@ -104,107 +99,88 @@
 
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!-- Вибір акаунту -->
                         <StackPanel Grid.Row="0">
-                            <TextBlock 
-                                Text="SELECT ACCOUNT"
+                            <TextBlock
+                                Margin="0,0,0,10"
                                 FontSize="14"
                                 FontWeight="Bold"
                                 Foreground="{StaticResource BrandSecondaryBrush}"
-                                Margin="0,0,0,10"/>
+                                Text="SELECT ACCOUNT" />
 
                             <ComboBox
                                 Height="56"
                                 Margin="0,0,0,20"
-                                ItemsSource="{Binding Accounts}"
-                                SelectedItem="{Binding SelectedAccount}"
                                 materialDesign:HintAssist.Hint="Choose account"
                                 FontSize="16"
                                 Foreground="{StaticResource TextPrimaryBrush}"
+                                ItemsSource="{Binding Accounts}"
+                                SelectedItem="{Binding SelectedAccount}"
                                 Style="{StaticResource MaterialDesignOutlinedComboBox}">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding DisplayName}" FontSize="14"/>
+                                        <TextBlock FontSize="14" Text="{Binding DisplayName}" />
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                         </StackPanel>
 
-                        <!-- Баланс -->
-                        <Border 
+                        <Border
                             Grid.Row="1"
-                            Background="{StaticResource BackgroundMidBrush}"
-                            CornerRadius="10"
+                            Margin="0,0,0,25"
                             Padding="20,15"
-                            Margin="0,0,0,25">
+                            Background="{StaticResource BackgroundMidBrush}"
+                            CornerRadius="10">
                             <StackPanel>
-                                <TextBlock 
-                                    Text="CURRENT BALANCE"
+                                <TextBlock
+                                    Margin="0,0,0,5"
                                     FontSize="12"
                                     Foreground="{StaticResource TextSecondaryBrush}"
-                                    Margin="0,0,0,5"/>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock 
-                                        Text="$"
+                                    Text="CURRENT BALANCE" />
+                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                                    <TextBlock
+                                        Margin="0,0,5,0"
                                         FontSize="32"
                                         FontWeight="Bold"
                                         Foreground="{StaticResource BrandSecondaryBrush}"
-                                        Margin="0,0,5,0"/>
-                                    <TextBlock 
-                                        Text="{Binding Balance, StringFormat=N2}"
+                                        Text="$" />
+                                    <TextBlock
                                         FontSize="32"
                                         FontWeight="Bold"
-                                        Foreground="{StaticResource TextPrimaryBrush}"/>
-                                    <Button
-                                        Width="32"
-                                        Height="32"
-                                        Margin="15,0,0,0"
-                                        Padding="0"
-                                        Style="{StaticResource MaterialDesignIconButton}"
-                                        Command="{Binding RefreshCommand}"
-                                        ToolTip="Refresh balance">
-                                        <materialDesign:PackIcon 
-                                            Kind="Refresh"
-                                            Width="20"
-                                            Height="20"
-                                            Foreground="{StaticResource BrandPrimaryBrush}"/>
-                                    </Button>
+                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                        Text="{Binding Balance, StringFormat=N2}" />
                                 </StackPanel>
                             </StackPanel>
                         </Border>
 
-                        <!-- Режим переказу або звичайних операцій -->
                         <StackPanel Grid.Row="2">
-                            <!-- Toggle Transfer Mode -->
                             <Button
                                 Height="45"
                                 Margin="0,0,0,15"
-                                Command="{Binding ToggleTransferModeCommand}"
-                                Style="{StaticResource MaterialDesignOutlinedButton}"
                                 BorderBrush="{StaticResource BrandPrimaryBrush}"
-                                Foreground="{StaticResource TextPrimaryBrush}">
+                                Command="{Binding ToggleTransferModeCommand}"
+                                Foreground="{StaticResource TextPrimaryBrush}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon 
-                                        Kind="SwapHorizontal"
+                                    <materialDesign:PackIcon
                                         Width="20"
                                         Height="20"
                                         Margin="0,0,8,0"
-                                        VerticalAlignment="Center"/>
+                                        VerticalAlignment="Center"
+                                        Kind="SwapHorizontal" />
                                     <TextBlock>
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="TRANSFER MODE"/>
+                                                <Setter Property="Text" Value="TRANSFER MODE" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsTransferMode}" Value="True">
-                                                        <Setter Property="Text" Value="NORMAL MODE"/>
+                                                        <Setter Property="Text" Value="NORMAL MODE" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -213,23 +189,17 @@
                                 </StackPanel>
                             </Button>
 
-                            <!-- Transfer Panel -->
                             <StackPanel Visibility="{Binding IsTransferMode, Converter={StaticResource BoolToVis}}">
-                                <ComboBox
+                                <TextBox
                                     Height="56"
                                     Margin="0,0,0,15"
-                                    ItemsSource="{Binding TransferAccounts}"
-                                    SelectedItem="{Binding TransferToAccount}"
-                                    materialDesign:HintAssist.Hint="Transfer to account"
+                                    materialDesign:HintAssist.Hint="Recipient account number"
+                                    BorderBrush="{StaticResource BorderBrush}"
                                     FontSize="16"
                                     Foreground="{StaticResource TextPrimaryBrush}"
-                                    Style="{StaticResource MaterialDesignOutlinedComboBox}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding DisplayName}" FontSize="14"/>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                    MaxLength="20"
+                                    Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                    Text="{Binding TransferToAccountNumber, UpdateSourceTrigger=PropertyChanged}" />
 
                                 <TextBox
                                     Height="56"
@@ -239,14 +209,33 @@
                                     FontSize="16"
                                     Foreground="{StaticResource TextPrimaryBrush}"
                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                    Text="{Binding TransferAmount}" />
+                                    Text="{Binding TransferAmount, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <Border
+                                    Margin="0,0,0,15"
+                                    Padding="12,8"
+                                    Background="{StaticResource BackgroundMidBrush}"
+                                    CornerRadius="8">
+                                    <StackPanel>
+                                        <TextBlock
+                                            Margin="0,0,0,5"
+                                            FontSize="11"
+                                            Foreground="{StaticResource TextSecondaryBrush}"
+                                            Text="💡 Available accounts:" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Foreground="{StaticResource BrandPrimaryBrush}"
+                                            Text="1111 • 2222 • 3333" />
+                                    </StackPanel>
+                                </Border>
 
                                 <Button
                                     Height="56"
                                     Margin="0,0,0,20"
                                     BorderThickness="0"
                                     Command="{Binding TransferCommand}"
-                                    Content="🔄 TRANSFER MONEY"
+                                    Content="🔄 SEND TRANSFER"
                                     Cursor="Hand"
                                     FontSize="16"
                                     FontWeight="Bold"
@@ -268,14 +257,13 @@
                                 </Button>
                             </StackPanel>
 
-                            <!-- Normal Operations Panel -->
                             <StackPanel>
                                 <StackPanel.Style>
                                     <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Setter Property="Visibility" Value="Visible" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsTransferMode}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -309,7 +297,11 @@
                                         </LinearGradientBrush>
                                     </Button.Background>
                                     <Button.Effect>
-                                        <DropShadowEffect BlurRadius="20" Opacity="0.5" ShadowDepth="0" Color="#00FFA3" />
+                                        <DropShadowEffect
+                                            BlurRadius="20"
+                                            Opacity="0.5"
+                                            ShadowDepth="0"
+                                            Color="#00FFA3" />
                                     </Button.Effect>
                                 </Button>
 
@@ -331,70 +323,79 @@
                                         </LinearGradientBrush>
                                     </Button.Background>
                                     <Button.Effect>
-                                        <DropShadowEffect BlurRadius="20" Opacity="0.5" ShadowDepth="0" Color="#FF3366" />
+                                        <DropShadowEffect
+                                            BlurRadius="20"
+                                            Opacity="0.5"
+                                            ShadowDepth="0"
+                                            Color="#FF3366" />
                                     </Button.Effect>
                                 </Button>
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- Статус -->
-                        <Border 
-                            Grid.Row="5"
+                        <Border
+                            Grid.Row="4"
+                            Padding="15,10"
                             Background="{StaticResource BackgroundMidBrush}"
-                            CornerRadius="8"
-                            Padding="15,10">
+                            CornerRadius="8">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon 
-                                    Kind="InformationOutline"
+                                <materialDesign:PackIcon
                                     Width="20"
                                     Height="20"
-                                    Foreground="{StaticResource InfoBrush}"
                                     Margin="0,0,10,0"
-                                    VerticalAlignment="Center"/>
-                                <TextBlock 
-                                    Text="{Binding Log}"
+                                    VerticalAlignment="Center"
+                                    Foreground="{StaticResource InfoBrush}"
+                                    Kind="InformationOutline" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
                                     FontSize="12"
                                     Foreground="{StaticResource TextSecondaryBrush}"
-                                    TextWrapping="Wrap"
-                                    VerticalAlignment="Center"/>
+                                    Text="{Binding Log}"
+                                    TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
                     </Grid>
                 </materialDesign:Card>
 
-                <!-- Центральна панель - Історія транзакцій -->
                 <materialDesign:Card
                     Grid.Column="2"
                     Padding="25"
                     Background="{StaticResource SurfaceBrush}"
                     UniformCornerRadius="15">
                     <materialDesign:Card.Effect>
-                        <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="#00F5FF" />
+                        <DropShadowEffect
+                            BlurRadius="30"
+                            Opacity="0.3"
+                            ShadowDepth="0"
+                            Color="#00F5FF" />
                     </materialDesign:Card.Effect>
 
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,20">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon 
-                                    Kind="History"
+                                <materialDesign:PackIcon
                                     Width="24"
                                     Height="24"
-                                    Foreground="{StaticResource BrandSecondaryBrush}"
                                     Margin="0,0,10,0"
-                                    VerticalAlignment="Center"/>
-                                <TextBlock 
-                                    Text="TRANSACTION HISTORY"
+                                    VerticalAlignment="Center"
+                                    Foreground="{StaticResource BrandSecondaryBrush}"
+                                    Kind="History" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
                                     FontSize="16"
                                     FontWeight="Bold"
                                     Foreground="{StaticResource BrandSecondaryBrush}"
-                                    VerticalAlignment="Center"/>
+                                    Text="TRANSACTION HISTORY" />
                             </StackPanel>
-                            <Border Height="2" Margin="0,10,0,0" Background="{StaticResource DividerBrush}"/>
+                            <Border
+                                Height="2"
+                                Margin="0,10,0,0"
+                                Background="{StaticResource DividerBrush}" />
                         </StackPanel>
 
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -404,38 +405,38 @@
                                         <Border Style="{StaticResource TransactionItemStyle}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
                                                 </Grid.RowDefinitions>
 
-                                                <Border 
+                                                <Border
                                                     Grid.RowSpan="2"
                                                     Width="40"
                                                     Height="40"
-                                                    CornerRadius="20"
                                                     Margin="0,0,15,0"
-                                                    VerticalAlignment="Center">
+                                                    VerticalAlignment="Center"
+                                                    CornerRadius="20">
                                                     <Border.Background>
-                                                        <SolidColorBrush Color="{StaticResource SuccessColor}" Opacity="0.2"/>
+                                                        <SolidColorBrush Opacity="0.2" Color="{StaticResource SuccessColor}" />
                                                     </Border.Background>
-                                                    <materialDesign:PackIcon 
+                                                    <materialDesign:PackIcon
                                                         Width="24"
                                                         Height="24"
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Center">
                                                         <materialDesign:PackIcon.Style>
                                                             <Style TargetType="materialDesign:PackIcon">
-                                                                <Setter Property="Kind" Value="ArrowUp"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                                                <Setter Property="Kind" Value="ArrowUp" />
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding Type}" Value="Withdraw">
-                                                                        <Setter Property="Kind" Value="ArrowDown"/>
-                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
+                                                                        <Setter Property="Kind" Value="ArrowDown" />
+                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -444,61 +445,61 @@
                                                 </Border>
 
                                                 <StackPanel Grid.Column="1">
-                                                    <TextBlock 
-                                                        Text="{Binding Type}"
+                                                    <TextBlock
                                                         FontSize="13"
                                                         FontWeight="Bold"
-                                                        Foreground="{StaticResource TextPrimaryBrush}"/>
-                                                    <TextBlock 
-                                                        Text="{Binding Timestamp, StringFormat='{}{0:MMM dd, HH:mm}'}"
+                                                        Foreground="{StaticResource TextPrimaryBrush}"
+                                                        Text="{Binding Type}" />
+                                                    <TextBlock
                                                         FontSize="10"
-                                                        Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                        Foreground="{StaticResource TextSecondaryBrush}"
+                                                        Text="{Binding Timestamp, StringFormat='{}{0:MMM dd, HH:mm}'}" />
                                                 </StackPanel>
 
                                                 <StackPanel Grid.Column="2" HorizontalAlignment="Right">
                                                     <TextBlock FontSize="13" FontWeight="Bold">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
-                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
-                                                                <Setter Property="Text" Value="{Binding Amount, StringFormat='+${0:N2}'}"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                                                <Setter Property="Text" Value="{Binding Amount, StringFormat='+${0:N2}'}" />
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding Type}" Value="Withdraw">
-                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
-                                                                        <Setter Property="Text" Value="{Binding Amount, StringFormat='-${0:N2}'}"/>
+                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                                        <Setter Property="Text" Value="{Binding Amount, StringFormat='-${0:N2}'}" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
                                                         </TextBlock.Style>
                                                     </TextBlock>
-                                                    <TextBlock 
-                                                        Text="{Binding Balance, StringFormat='${0:N2}'}"
+                                                    <TextBlock
+                                                        HorizontalAlignment="Right"
                                                         FontSize="9"
                                                         Foreground="{StaticResource TextSecondaryBrush}"
-                                                        HorizontalAlignment="Right"/>
+                                                        Text="{Binding Balance, StringFormat='${0:N2}'}" />
                                                 </StackPanel>
 
-                                                <Border 
+                                                <Border
                                                     Grid.Row="1"
                                                     Grid.Column="1"
                                                     Grid.ColumnSpan="2"
                                                     Margin="0,5,0,0"
                                                     Padding="6,2"
-                                                    CornerRadius="3"
-                                                    HorizontalAlignment="Left">
+                                                    HorizontalAlignment="Left"
+                                                    CornerRadius="3">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Setter Property="Background">
                                                                 <Setter.Value>
-                                                                    <SolidColorBrush Color="{StaticResource SuccessColor}" Opacity="0.15"/>
+                                                                    <SolidColorBrush Opacity="0.15" Color="{StaticResource SuccessColor}" />
                                                                 </Setter.Value>
                                                             </Setter>
                                                         </Style>
                                                     </Border.Style>
-                                                    <TextBlock 
-                                                        Text="{Binding Status}"
+                                                    <TextBlock
                                                         FontSize="9"
                                                         FontWeight="Medium"
-                                                        Foreground="{StaticResource SuccessBrush}"/>
+                                                        Foreground="{StaticResource SuccessBrush}"
+                                                        Text="{Binding Status}" />
                                                 </Border>
                                             </Grid>
                                         </Border>
@@ -509,39 +510,46 @@
                     </Grid>
                 </materialDesign:Card>
 
-                <!-- Права панель - Курси валют -->
                 <materialDesign:Card
                     Grid.Column="4"
                     Padding="20"
                     Background="{StaticResource SurfaceBrush}"
                     UniformCornerRadius="15">
                     <materialDesign:Card.Effect>
-                        <DropShadowEffect BlurRadius="30" Opacity="0.3" ShadowDepth="0" Color="#FFD60A" />
+                        <DropShadowEffect
+                            BlurRadius="30"
+                            Opacity="0.3"
+                            ShadowDepth="0"
+                            Color="#FFD60A" />
                     </materialDesign:Card.Effect>
 
                     <Grid>
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,20">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon 
-                                    Kind="CurrencyUsd"
+                                <materialDesign:PackIcon
                                     Width="22"
                                     Height="22"
-                                    Foreground="{StaticResource WarningBrush}"
                                     Margin="0,0,8,0"
-                                    VerticalAlignment="Center"/>
-                                <TextBlock 
-                                    Text="CURRENCY"
+                                    VerticalAlignment="Center"
+                                    Foreground="{StaticResource WarningBrush}"
+                                    Kind="CurrencyUsd" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
                                     FontSize="14"
                                     FontWeight="Bold"
                                     Foreground="{StaticResource WarningBrush}"
-                                    VerticalAlignment="Center"/>
+                                    Text="CURRENCY" />
                             </StackPanel>
-                            <Border Height="2" Margin="0,8,0,0" Background="{StaticResource DividerBrush}"/>
+                            <Border
+                                Height="2"
+                                Margin="0,8,0,0"
+                                Background="{StaticResource DividerBrush}" />
                         </StackPanel>
 
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -551,71 +559,70 @@
                                         <Border Style="{StaticResource CurrencyCardStyle}">
                                             <Grid>
                                                 <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
                                                 </Grid.RowDefinitions>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
 
-                                                <!-- Flag -->
-                                                <TextBlock 
+                                                <TextBlock
                                                     Grid.RowSpan="2"
-                                                    Text="{Binding Flag}"
-                                                    FontSize="28"
                                                     Margin="0,0,12,0"
-                                                    VerticalAlignment="Center"/>
+                                                    VerticalAlignment="Center"
+                                                    FontSize="28"
+                                                    Text="{Binding Flag}" />
 
-                                                <!-- Currency Code -->
-                                                <TextBlock 
+                                                <TextBlock
                                                     Grid.Column="1"
-                                                    Text="{Binding CurrencyCode}"
                                                     FontSize="14"
                                                     FontWeight="Bold"
-                                                    Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                                    Text="{Binding CurrencyCode}" />
 
-                                                <!-- Currency Name -->
-                                                <TextBlock 
+                                                <TextBlock
                                                     Grid.Row="1"
                                                     Grid.Column="1"
-                                                    Text="{Binding CurrencyName}"
                                                     FontSize="10"
-                                                    Foreground="{StaticResource TextSecondaryBrush}"/>
+                                                    Foreground="{StaticResource TextSecondaryBrush}"
+                                                    Text="{Binding CurrencyName}" />
 
-                                                <!-- Rate -->
-                                                <StackPanel Grid.Column="2" Grid.RowSpan="2" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                                    <TextBlock 
-                                                        Text="{Binding Rate, StringFormat='{}{0:F2}'}"
-                                                        FontSize="15"
-                                                        FontWeight="Bold"
-                                                        Foreground="{StaticResource TextPrimaryBrush}"
-                                                        HorizontalAlignment="Right"/>
-                                                    <TextBlock 
-                                                        FontSize="10"
-                                                        FontWeight="SemiBold"
-                                                        HorizontalAlignment="Right">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
-                                                                <Setter Property="Text" Value="{Binding Change, StringFormat='+{0:F3}'}"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Change, Converter={StaticResource NegativeConverter}}" Value="True">
-                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}"/>
-                                                                        <Setter Property="Text" Value="{Binding Change, StringFormat='{}{0:F3}'}"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </StackPanel>
+                                                <TextBlock
+                                                    Grid.RowSpan="2"
+                                                    Grid.Column="2"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="15"
+                                                    FontWeight="Bold"
+                                                    Foreground="{StaticResource TextPrimaryBrush}"
+                                                    Text="{Binding Rate, StringFormat='{}{0:F4}'}" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </ScrollViewer>
+
+                        <Button
+                            Grid.Row="2"
+                            Height="40"
+                            Margin="0,10,0,0"
+                            BorderBrush="{StaticResource WarningBrush}"
+                            Command="{Binding RefreshCommand}"
+                            Foreground="{StaticResource TextPrimaryBrush}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon
+                                    Width="18"
+                                    Height="18"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    Kind="Refresh" />
+                                <TextBlock VerticalAlignment="Center" Text="REFRESH RATES" />
+                            </StackPanel>
+                        </Button>
                     </Grid>
                 </materialDesign:Card>
             </Grid>

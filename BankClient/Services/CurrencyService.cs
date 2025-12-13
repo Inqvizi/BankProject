@@ -28,7 +28,6 @@ namespace BankClient.Services
         {
             try
             {
-                // Використовуємо кеш, якщо дані свіжі (менше 30 секунд)
                 if (_cachedRates.Count > 0 && (DateTime.Now - _lastUpdate).TotalSeconds < 30)
                 {
                     return new Dictionary<string, decimal>(_cachedRates);
@@ -50,7 +49,6 @@ namespace BankClient.Services
                     return new Dictionary<string, decimal>(data.Rates);
                 }
 
-                // Якщо API не повернув дані, використовуємо fallback
                 return GetFallbackRates();
             }
             catch (HttpRequestException ex)
@@ -77,13 +75,11 @@ namespace BankClient.Services
 
         private Dictionary<string, decimal> GetFallbackRates()
         {
-            // Якщо є кешовані дані, використовуємо їх
             if (_cachedRates.Count > 0)
             {
                 return new Dictionary<string, decimal>(_cachedRates);
             }
 
-            // Інакше повертаємо статичні дані
             return new Dictionary<string, decimal>
             {
                 { "EUR", 0.92m },
