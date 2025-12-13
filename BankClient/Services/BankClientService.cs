@@ -13,18 +13,43 @@ namespace BankClient.Services
     {
         public TransactionResponse SendRequest(TransactionRequest request)
         {
+            var baseRequest = new BaseRequest
+            {
+                RequestType = RequestType.Transaction,
+                JsonPayload = JsonSerializer.Serialize(request)
+            };
 
+            return SendBaseRequest<TransactionResponse>(baseRequest);
+        }
+
+        public TransferResponse SendTransferRequest(TransferRequest request)
+        {
+            var baseRequest = new BaseRequest
+            {
+                RequestType = RequestType.Transfer,
+                JsonPayload = JsonSerializer.Serialize(request)
+            };
+
+            return SendBaseRequest<TransferResponse>(baseRequest);
+        }
+
+        private T SendBaseRequest<T>(BaseRequest request)
+        {
             using (var mutex = new Mutex(false, AppConstants.MutexName))
             {
                 bool hasMutex = false;
                 try
                 {
-
                     try
                     {
                         hasMutex = mutex.WaitOne(TimeSpan.FromSeconds(10));
                         if (!hasMutex)
-                            return new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout" };
+                        {
+                            if (typeof(T) == typeof(TransactionResponse))
+                                return (T)(object)new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout" };
+                            else
+                                return (T)(object)new TransferResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout" };
+                        }
                     }
                     catch (AbandonedMutexException) { hasMutex = true; }
 
@@ -49,11 +74,13 @@ namespace BankClient.Services
                     {
                         if (!clientSignal.WaitOne(TimeSpan.FromSeconds(10)))
                         {
-                            return new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Server Timeout" };
+                            if (typeof(T) == typeof(TransactionResponse))
+                                return (T)(object)new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Server Timeout" };
+                            else
+                                return (T)(object)new TransferResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Server Timeout" };
                         }
                     }
 
-                    
                     using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
                     using (var stream = mmf.CreateViewStream())
                     {
@@ -61,12 +88,15 @@ namespace BankClient.Services
                         stream.Read(buffer, 0, buffer.Length);
                         string jsonResponse = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
 
-                        return JsonSerializer.Deserialize<TransactionResponse>(jsonResponse);
+                        return JsonSerializer.Deserialize<T>(jsonResponse);
                     }
                 }
                 catch (Exception ex)
                 {
-                    return new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = $"IPC Error: {ex.Message}" };
+                    if (typeof(T) == typeof(TransactionResponse))
+                        return (T)(object)new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = $"IPC Error: {ex.Message}" };
+                    else
+                        return (T)(object)new TransferResponse { ResultStatus = TransactionResult.ServerError, Message = $"IPC Error: {ex.Message}" };
                 }
                 finally
                 {
