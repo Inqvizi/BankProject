@@ -18,6 +18,8 @@ namespace BankServer.Services
 
         public TransferResponse ProcessTransfer(TransferRequest request)
         {
+           lock (_repository.Lock)
+           { 
             var response = new TransferResponse
             {
                 FromAccountNumber = request.FromAccountNumber,
@@ -91,5 +93,6 @@ namespace BankServer.Services
 
             return response;
         }
+     }
     }
 }

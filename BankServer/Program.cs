@@ -13,6 +13,9 @@ namespace BankServer
 {
     class Program
     {
+        private static Mutex? _mmfMutex;
+        private static EventWaitHandle? _globalUpdateSignal;
+
         static void Main(string[] args)
         {
             Console.Title = "Midnight Finance Server";
@@ -27,49 +30,73 @@ namespace BankServer
             var logger = new FileLogger("logs.json");
             var transactionService = new TransactionService(repository, logger);
             var transferService = new TransferService(repository, logger);
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.ResetColor();
-            Console.WriteLine();
-
-            using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
-            using (var serverSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
+            try
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Shared Memory created");
-                Console.WriteLine("Listening for client requests...");
+                _mmfMutex = new Mutex(false, AppConstants.MutexName);
+                _globalUpdateSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.GlobalUpdateSignalName);
+
+
+
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.ResetColor();
                 Console.WriteLine();
-                Console.WriteLine("═══════════════════════════════════════════════════════════════");
-                Console.WriteLine();
 
-                int requestCount = 0;
-
-                while (true)
+                using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
+                using (var serverSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.NewDataSignalName))
                 {
-                    serverSignal.WaitOne();
-                    requestCount++;
-                    ProcessClientRequest(transactionService, transferService, requestCount);
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Shared Memory created");
+                    Console.WriteLine("Listening for client requests...");
+                    Console.ResetColor();
+                    Console.WriteLine();
+                    Console.WriteLine("═══════════════════════════════════════════════════════════════");
+                    Console.WriteLine();
+
+                    int requestCount = 0;
+
+                    while (true)
+                    {
+                        serverSignal.WaitOne();
+                        requestCount++;
+                        ProcessClientRequest(transactionService, transferService, requestCount);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[CRITICAL ERROR] Server initialization or main loop failed: {ex.Message}");
+                Console.ResetColor();
+            }
+            finally
+            {
+                _mmfMutex?.Dispose();
+                _globalUpdateSignal?.Dispose();
             }
         }
 
         static void ProcessClientRequest(TransactionService transactionService, TransferService transferService, int requestNumber)
         {
             DateTime startTime = DateTime.Now;
-
+            BaseRequest? baseRequest = null;
+            _mmfMutex.WaitOne();
             try
             {
                 using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
                 using (var stream = mmf.CreateViewStream())
                 {
                     byte[] buffer = new byte[AppConstants.MemoryBufferSize];
-                    stream.Read(buffer, 0, buffer.Length);
-                    string jsonRequest = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
+                    int bytesRead=stream.Read(buffer, 0, buffer.Length);
+                    if (bytesRead == 0) 
+                    {
+                        return;
+                    }
+                    string jsonRequest = Encoding.UTF8.GetString(buffer,0,bytesRead).TrimEnd('\0');
 
                     if (string.IsNullOrWhiteSpace(jsonRequest)) return;
 
-                    var baseRequest = JsonSerializer.Deserialize<BaseRequest>(jsonRequest);
+                    baseRequest = JsonSerializer.Deserialize<BaseRequest>(jsonRequest);
+                    if (baseRequest == null) return;
 
                     Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine($"┌─ Request #{requestNumber} [{DateTime.Now:HH:mm:ss}]");
@@ -110,6 +137,10 @@ namespace BankServer
                 Console.WriteLine("Client signal not available");
                 Console.ResetColor();
             }
+            finally
+            {
+                _mmfMutex.ReleaseMutex();
+            }
         }
 
         static void ProcessTransactionRequest(TransactionService service, TransactionRequest request, DateTime startTime)
@@ -129,6 +160,7 @@ namespace BankServer
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"│  Status: SUCCESS");
+                SignalGlobalUpdate();
                 Console.WriteLine($"│  New Balance: ${response.NewBalance:N2}");
             }
             else
@@ -162,6 +194,7 @@ namespace BankServer
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"│  ✓ Status: SUCCESS");
+                SignalGlobalUpdate();
                 Console.WriteLine($"│  From Balance: ${response.FromAccountNewBalance:N2}");
                 Console.WriteLine($"│  To Balance: ${response.ToAccountNewBalance:N2}");
             }
@@ -184,13 +217,43 @@ namespace BankServer
         {
             string jsonResponse = JsonSerializer.Serialize(response);
             byte[] responseData = Encoding.UTF8.GetBytes(jsonResponse);
-
-            using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
-            using (var stream = mmf.CreateViewStream())
+            _mmfMutex.WaitOne();
+            try
             {
-                stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
-                stream.Position = 0;
-                stream.Write(responseData, 0, responseData.Length);
+                using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
+                using (var stream = mmf.CreateViewStream())
+                {
+                    stream.Write(new byte[AppConstants.MemoryBufferSize], 0, AppConstants.MemoryBufferSize);
+                    stream.Position = 0;
+                    stream.Write(responseData, 0, responseData.Length);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[Memory Write Error] Failed to write response to shared memory: {ex.Message}");
+                Console.ResetColor();
+            }
+            finally
+            {
+                _mmfMutex.ReleaseMutex();
+            }
+
+        }
+        static void SignalGlobalUpdate()
+        {
+            try 
+            {
+                _globalUpdateSignal?.Set();
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(">> BROADCAST: Global data update signal sent to all clients.");
+                Console.ResetColor();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"[Broadcast Error] Failed to set global signal: {ex.Message}");
+                Console.ResetColor();
             }
         }
     }

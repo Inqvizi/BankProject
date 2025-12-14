@@ -19,5 +19,7 @@ namespace BankShared.Constants
         public const int MemoryBufferSize = 4096;
 
         public const string ClientWaitSignalName = "Local\\BankAppClientWaitSignal";
+        //Сигнал глобального оновлення
+        public const string GlobalUpdateSignalName = "Local\\BankAppGlobalUpdateSignal";
     }
 }

@@ -1,16 +1,19 @@
 ﻿using BankClient.Commands;
-using System;
 using BankClient.Services;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using BankShared.Enums;
+using BankShared.Constants;
 using BankShared.DTOs;
+using BankShared.Enums;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Linq;
+using System.Windows.Input;
+
 
 namespace BankClient.ViewModels
 {
@@ -78,7 +81,8 @@ namespace BankClient.ViewModels
         private string _transferToAccountNumber;
         private string _transferAmount;
         private bool _isTransferMode;
-
+        private CancellationTokenSource _cts = new CancellationTokenSource();
+        private EventWaitHandle? _globalUpdateSignal;
         private Dictionary<string, ObservableCollection<TransactionHistoryItem>> _accountHistories;
 
         public ObservableCollection<AccountInfo> Accounts { get; set; }
@@ -147,9 +151,24 @@ namespace BankClient.ViewModels
         public ICommand RefreshCommand { get; set; }
         public ICommand TransferCommand { get; set; }
         public ICommand ToggleTransferModeCommand { get; set; }
-
+        public ICommand CloseWindowCommand { get; }
+       
         public MainViewModel()
         {
+            CloseWindowCommand = new RelayCommand(_ => OnWindowClosing());
+            try
+            {
+                _globalUpdateSignal = EventWaitHandle.OpenExisting(AppConstants.GlobalUpdateSignalName);
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                // Це може трапитись, якщо Сервер ще не запущений
+                Console.WriteLine("[Client] Warning: GlobalUpdateSignal not found. Start the Server.");
+                _globalUpdateSignal = null;
+            }
+
+            // >>> ЗАПУСК ЛІСТЕНЕРА (4.2) <<<
+            StartListeningForUpdates();
             _bankClient = new BankClientService();
             _currencyService = new CurrencyService();
 
@@ -197,6 +216,7 @@ namespace BankClient.ViewModels
             _ = LoadCurrencyRatesAsync();
 
             Log = "Ready";
+
         }
 
         private void LoadAccountHistory(string accountNumber)
@@ -466,6 +486,94 @@ namespace BankClient.ViewModels
             {
                 IsBusy = false;
             }
+        }
+        private void StartListeningForUpdates()
+        {
+            if (_globalUpdateSignal != null)
+            {
+               
+                Task.Run(() => ListenForGlobalUpdates(_cts.Token));
+            }
+        }
+        private void ListenForGlobalUpdates(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    
+                    if (_globalUpdateSignal?.WaitOne(100) == true)
+                    {
+                        Console.WriteLine("[Client] Received global update signal. Synchronizing data...");
+
+                       
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ForceUpdateData();
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                    if (!cancellationToken.IsCancellationRequested)
+                        Console.WriteLine($"[Client] Listener error: {ex.Message}");
+                }
+            }
+        }
+        private void LoadTransactionHistory()
+        {
+       
+            TransactionHistory.Clear();
+
+            if (SelectedAccount == null || !_accountHistories.ContainsKey(SelectedAccount.AccountNumber))
+            {
+                Log = "No transaction history available for the selected account.";
+                return;
+            }
+
+            
+            var history = _accountHistories[SelectedAccount.AccountNumber];
+
+            
+            var sortedHistory = history.OrderByDescending(t => t.Timestamp);
+
+            foreach (var item in sortedHistory)
+            {
+                TransactionHistory.Add(item);
+            }
+
+           
+            if (SelectedAccount.AccountNumber == Accounts.First().AccountNumber)
+            {
+                
+                OnPropertyChanged(nameof(Balance));
+            }
+        }
+        public void ForceUpdateData()
+        {
+
+            OnPropertyChanged(nameof(Balance));
+
+         
+            if (SelectedAccount != null)
+            {
+                LoadTransactionHistory(); 
+            }
+
+            Log = $"Global update received at {DateTime.Now:HH:mm:ss}. Data synchronized.";
+        }
+
+        public void OnWindowClosing()
+        {
+            
+            _cts.Cancel();
+
+           
+            _globalUpdateSignal?.Dispose();
+            _cts.Dispose();
+
+            Console.WriteLine("[Client] Broadcast listener stopped. Cleanup complete.");
         }
     }
 }

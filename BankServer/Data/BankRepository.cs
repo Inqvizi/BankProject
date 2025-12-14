@@ -8,6 +8,7 @@ namespace BankServer.Data
     {
         private List<BankAccount> _accounts;
 
+        public readonly object Lock = new object();
         public BankRepository()
         {
             _accounts = new List<BankAccount>();

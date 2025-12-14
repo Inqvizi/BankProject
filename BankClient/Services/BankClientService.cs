@@ -35,25 +35,25 @@ namespace BankClient.Services
 
         private T SendBaseRequest<T>(BaseRequest request)
         {
-            using (var mutex = new Mutex(false, AppConstants.MutexName))
+            using (var accessMutex = new Mutex(false, AppConstants.MutexName))
             {
-                bool hasMutex = false;
+                bool hasAccessMutex = false;
                 try
                 {
                     try
                     {
-                        hasMutex = mutex.WaitOne(TimeSpan.FromSeconds(10));
-                        if (!hasMutex)
+                        hasAccessMutex = accessMutex.WaitOne(TimeSpan.FromSeconds(10));
+                        if (!hasAccessMutex)
                         {
                             if (typeof(T) == typeof(TransactionResponse))
-                                return (T)(object)new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout" };
+                                return (T)(object)new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout (Request Write)" };
                             else
-                                return (T)(object)new TransferResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout" };
+                                return (T)(object)new TransferResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout (Request Write)" };
                         }
                     }
-                    catch (AbandonedMutexException) { hasMutex = true; }
+                    catch (AbandonedMutexException) { hasAccessMutex = true; }
 
-                    using (var mmf = MemoryMappedFile.CreateOrOpen(AppConstants.MemoryMappedFileName, AppConstants.MemoryBufferSize))
+                    using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
                     using (var stream = mmf.CreateViewStream())
                     {
                         string json = JsonSerializer.Serialize(request);
@@ -70,6 +70,9 @@ namespace BankClient.Services
                         serverSignal.Set();
                     }
 
+                    accessMutex.ReleaseMutex();
+                    hasAccessMutex = false;
+
                     using (var clientSignal = new EventWaitHandle(false, EventResetMode.AutoReset, AppConstants.ClientWaitSignalName))
                     {
                         if (!clientSignal.WaitOne(TimeSpan.FromSeconds(10)))
@@ -81,14 +84,31 @@ namespace BankClient.Services
                         }
                     }
 
+                    try
+                    {
+                        hasAccessMutex = accessMutex.WaitOne(TimeSpan.FromSeconds(5));
+                        if (!hasAccessMutex)
+                        {
+                            if (typeof(T) == typeof(TransactionResponse))
+                                return (T)(object)new TransactionResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout (Response Read)" };
+                            else
+                                return (T)(object)new TransferResponse { ResultStatus = TransactionResult.ServerError, Message = "Client: Queue Timeout (Response Read)" };
+                        }
+                    }
+                    catch (AbandonedMutexException) { hasAccessMutex = true; }
+
                     using (var mmf = MemoryMappedFile.OpenExisting(AppConstants.MemoryMappedFileName))
                     using (var stream = mmf.CreateViewStream())
                     {
+                        stream.Position = 0;
                         byte[] buffer = new byte[AppConstants.MemoryBufferSize];
-                        stream.Read(buffer, 0, buffer.Length);
-                        string jsonResponse = Encoding.UTF8.GetString(buffer).TrimEnd('\0');
 
-                        return JsonSerializer.Deserialize<T>(jsonResponse);
+                        int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                        if (bytesRead == 0) throw new InvalidOperationException("IPC: Received 0 bytes from server.");
+
+                        string jsonResponse = Encoding.UTF8.GetString(buffer, 0, bytesRead).TrimEnd('\0');
+
+                        return JsonSerializer.Deserialize<T>(jsonResponse)!;
                     }
                 }
                 catch (Exception ex)
@@ -100,7 +120,7 @@ namespace BankClient.Services
                 }
                 finally
                 {
-                    if (hasMutex) mutex.ReleaseMutex();
+                    if (hasAccessMutex) accessMutex.ReleaseMutex();
                 }
             }
         }

@@ -1,14 +1,22 @@
-﻿<Window
+﻿<Window 
     x:Class="BankClient.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    
+    
+    xmlns:beh="clr-namespace:BankClient.Behaviors;assembly=BankClient"
+    
+    
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:converters="clr-namespace:BankClient.Converters"
+    
     Title="Midnight Finance"
     Width="1400"
     Height="1000"
-    WindowStartupLocation="CenterScreen">
+    
+   >
 
-    <Window.Resources>
+<Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
         <Style x:Key="TransactionItemStyle" TargetType="Border">
