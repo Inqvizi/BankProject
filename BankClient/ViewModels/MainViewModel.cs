@@ -229,8 +229,9 @@ namespace BankClient.ViewModels
                         ("GBP", "British Pound", "🇬🇧"),
                         ("JPY", "Japanese Yen", "🇯🇵"),
                         ("CHF", "Swiss Franc", "🇨🇭"),
-                        ("CAD", "Canadian Dollar", "🇨🇦")
-                    };
+                        ("CAD", "Canadian Dollar", "🇨🇦"),
+                        ("UAH", "Ukrainian Hryvnia", "🇺🇦") 
+                     };
 
                     foreach (var (code, name, flag) in currenciesToDisplay)
                     {

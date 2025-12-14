@@ -89,7 +89,8 @@ namespace BankClient.Services
                 { "CAD", 1.36m },
                 { "AUD", 1.52m },
                 { "CNY", 7.24m },
-                { "INR", 83.12m }
+                { "INR", 83.12m },
+                { "UAH", 41.1m }
             };
         }
 
