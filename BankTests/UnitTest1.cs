@@ -14,7 +14,6 @@ using Xunit.Abstractions;
 
 namespace Bank.Tests
 {
-    // ================= Repository Tests =================
     public class RepositoryTests
     {
         [Fact]
@@ -39,7 +38,6 @@ namespace Bank.Tests
         }
     }
 
-    // ================= FileLogger JSON Append Tests =================
     public class FileLoggerAppendTests
     {
         private class LogEntry
@@ -141,20 +139,15 @@ namespace Bank.Tests
         [Fact]
         public void StressTest_10Clients_SimultaneousDeposit()
         {
-            // === ARRANGE ===
-            int numberOfClients = 10; // Кількість потоків
+            int numberOfClients = 10;
             decimal amountPerClient = 10.0m;
-            string targetAccount = "1111"; // Початковий баланс 1000.00 (з BankRepository)
+            string targetAccount = "1111"; 
 
-            // Очікуваний приріст: 10 * 10 = 100. 
-            // Але через Race Condition у простій архітектурі IPC деякі запити можуть загубитися.
-            // Цей тест покаже реальну стабільність.
 
             var tasks = new List<Task<TransactionResponse>>();
 
             _output.WriteLine($"🚀 STARTING STRESS TEST: {numberOfClients} clients targeting account {targetAccount}...");
 
-            // === ACT ===
             for (int i = 0; i < numberOfClients; i++)
             {
                 int clientId = i;
@@ -184,34 +177,26 @@ namespace Bank.Tests
                 }));
             }
 
-            // Чекаємо завершення всіх потоків
             Task.WaitAll(tasks.ToArray());
 
-            // === ASSERT & ANALYZE ===
             int successCount = tasks.Count(t => t.Result.ResultStatus == TransactionResult.Success);
             int failCount = tasks.Count(t => t.Result.ResultStatus != TransactionResult.Success);
 
             _output.WriteLine("------------------------------------------------");
-            _output.WriteLine($"📊 REPORT:");
-            _output.WriteLine($"✅ Successful transactions: {successCount}");
-            _output.WriteLine($"❌ Failed transactions: {failCount}");
+            _output.WriteLine($"REPORT:");
+            _output.WriteLine($"Successful transactions: {successCount}");
+            _output.WriteLine($"Failed transactions: {failCount}");
 
-            // Отримуємо фінальний баланс (робимо ще один запит, щоб дізнатися актуальний стан)
             var finalCheckService = new BankClientService();
             var finalResponse = finalCheckService.SendRequest(new TransactionRequest
             {
                 AccountNumber = targetAccount,
-                Amount = 0, // Фіктивний запит, щоб отримати баланс (або суму 1 грн)
+                Amount = 0,
                 Type = TransactionType.Deposit
             });
 
-            _output.WriteLine($"💰 FINAL BALANCE ON SERVER: {finalResponse.NewBalance}");
+            _output.WriteLine($"FINAL BALANCE ON SERVER: {finalResponse.NewBalance}");
 
-            // ПЕРЕВІРКА:
-            // Якщо система ідеальна (з чергою), то successCount має бути 10.
-            // Якщо у нас проста MemoryMappedFile (одна комірка), то буде багато ServerTimeout або перезаписів.
-
-            // Цей Assert перевіряє, чи хоч щось пройшло успішно (м'яка перевірка)
             Assert.True(successCount > 0, "Хоча б одна транзакція мала пройти успішно!");
         }
     }

@@ -7,6 +7,7 @@ namespace BankShared.Enums
     public enum TransactionType
     {
         Deposit,
-        Withdraw,   
+        Withdraw,
+        CheckBalance
     }
 }

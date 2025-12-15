@@ -18,7 +18,7 @@ namespace BankServer
             Console.Title = "Midnight Finance Server";
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine("╔════════════════════════════════════════╗");
-            Console.WriteLine("║     MIDNIGHT FINANCE SERVER v1.0       ║");
+            Console.WriteLine("║      MIDNIGHT FINANCE SERVER v1.0      ║");
             Console.WriteLine("╚════════════════════════════════════════╝");
             Console.ResetColor();
             Console.WriteLine();
@@ -71,19 +71,26 @@ namespace BankServer
 
                     var baseRequest = JsonSerializer.Deserialize<BaseRequest>(jsonRequest);
 
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine($"┌─ Request #{requestNumber} [{DateTime.Now:HH:mm:ss}]");
-                    Console.ResetColor();
 
                     if (baseRequest.RequestType == RequestType.Transfer)
                     {
+                        PrintRequestHeader(requestNumber);
+
                         var transferRequest = JsonSerializer.Deserialize<TransferRequest>(baseRequest.JsonPayload);
                         ProcessTransferRequest(transferService, transferRequest, startTime);
                     }
                     else
                     {
                         var transactionRequest = JsonSerializer.Deserialize<TransactionRequest>(baseRequest.JsonPayload);
-                        ProcessTransactionRequest(transactionService, transactionRequest, startTime);
+
+                        bool isSilent = transactionRequest.Type == TransactionType.CheckBalance;
+
+                        if (!isSilent)
+                        {
+                            PrintRequestHeader(requestNumber);
+                        }
+
+                        ProcessTransactionRequest(transactionService, transactionRequest, startTime, isSilent);
                     }
                 }
             }
@@ -106,42 +113,53 @@ namespace BankServer
             }
             catch
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Client signal not available");
-                Console.ResetColor();
+
             }
         }
 
-        static void ProcessTransactionRequest(TransactionService service, TransactionRequest request, DateTime startTime)
+        static void PrintRequestHeader(int requestNumber)
         {
-            Console.ForegroundColor = request.Type == TransactionType.Deposit
-                ? ConsoleColor.Green
-                : ConsoleColor.Red;
-            Console.WriteLine($"│  Type: {request.Type}");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"┌─ Request #{requestNumber} [{DateTime.Now:HH:mm:ss}]");
             Console.ResetColor();
-            Console.WriteLine($"│  Account: {request.AccountNumber}");
-            Console.WriteLine($"│  Amount: ${request.Amount:N2}");
+        }
+
+        static void ProcessTransactionRequest(TransactionService service, TransactionRequest request, DateTime startTime, bool isSilent)
+        {
+            if (!isSilent)
+            {
+                Console.ForegroundColor = request.Type == TransactionType.Deposit
+                    ? ConsoleColor.Green
+                    : ConsoleColor.Red;
+                Console.WriteLine($"│  Type: {request.Type}");
+                Console.ResetColor();
+                Console.WriteLine($"│  Account: {request.AccountNumber}");
+                Console.WriteLine($"│  Amount: ${request.Amount:N2}");
+            }
 
             var response = service.ProcessRequest(request);
             var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
 
-            if (response.ResultStatus == TransactionResult.Success)
+            if (!isSilent)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"│  Status: SUCCESS");
-                Console.WriteLine($"│  New Balance: ${response.NewBalance:N2}");
-            }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"│  Status: {response.ResultStatus}");
-                Console.WriteLine($"│  Message: {response.Message}");
-            }
+                if (response.ResultStatus == TransactionResult.Success)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"│  Status: SUCCESS");
+                    Console.WriteLine($"│  New Balance: ${response.NewBalance:N2}");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"│  Status: {response.ResultStatus}");
+                    Console.WriteLine($"│  Message: {response.Message}");
+                }
 
-            Console.ResetColor();
-            Console.WriteLine($"│  Processed in: {elapsed:F2}ms");
-            Console.WriteLine($"└─────────────────────────────────────────");
-            Console.WriteLine();
+                Console.ResetColor();
+                Console.WriteLine($"│  Processed in: {elapsed:F2}ms");
+                Console.WriteLine($"└─────────────────────────────────────────");
+                Console.WriteLine();
+            }
 
             WriteResponseToMemory(response);
         }
