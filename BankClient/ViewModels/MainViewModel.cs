@@ -1,16 +1,20 @@
 ﻿using BankClient.Commands;
-using System;
 using BankClient.Services;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using BankShared.Enums;
 using BankShared.DTOs;
+using BankShared.Enums;
+using MaterialDesignThemes.Wpf;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using MaterialDesignColors;
+using System.Windows.Media;      
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace BankClient.ViewModels
 {
@@ -319,7 +323,6 @@ namespace BankClient.ViewModels
                 if (!decimal.TryParse(TransferAmount, out decimal validAmount))
                 {
                     Log = "Error: Please enter a valid number";
-                    MessageBox.Show(Log);
                     return;
                 }
 
@@ -476,7 +479,6 @@ namespace BankClient.ViewModels
                 if (!decimal.TryParse(AmountToEnter, out decimal validAmount))
                 {
                     Log = "Error: Please enter a valid number";
-                    MessageBox.Show(Log);
                     return;
                 }
 
