@@ -34,6 +34,16 @@ namespace BankServer.Services
                 return response;
             }
 
+            if (request.Type == TransactionType.CheckBalance)
+            {
+                response.NewBalance = account.Balance;
+                response.Message = "Sync";
+
+                response.History = account.GetTransactionHistory(10);
+
+                return response;
+            }
+
             if (request.Amount <= 0)
             {
                 response.ResultStatus = TransactionResult.InvalidAmount;

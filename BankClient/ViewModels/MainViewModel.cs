@@ -78,6 +78,7 @@ namespace BankClient.ViewModels
         private string _transferToAccountNumber;
         private string _transferAmount;
         private bool _isTransferMode;
+        private readonly Timer _balanceUpdateTimer;
 
         private Dictionary<string, ObservableCollection<TransactionHistoryItem>> _accountHistories;
 
@@ -154,11 +155,11 @@ namespace BankClient.ViewModels
             _currencyService = new CurrencyService();
 
             Accounts = new ObservableCollection<AccountInfo>
-            {
-                new AccountInfo { AccountNumber = "1111", DisplayName = "Main Account (1111)", Balance = 1000.00m },
-                new AccountInfo { AccountNumber = "2222", DisplayName = "Savings Account (2222)", Balance = 500.50m },
-                new AccountInfo { AccountNumber = "3333", DisplayName = "Investment Account (3333)", Balance = 999999.00m }
-            };
+    {
+        new AccountInfo { AccountNumber = "1111", DisplayName = "Main Account (1111)", Balance = 1000.00m },
+        new AccountInfo { AccountNumber = "2222", DisplayName = "Savings Account (2222)", Balance = 500.50m },
+        new AccountInfo { AccountNumber = "3333", DisplayName = "Investment Account (3333)", Balance = 999999.00m }
+    };
 
             TransactionHistory = new ObservableCollection<TransactionHistoryItem>();
             CurrencyRates = new ObservableCollection<CurrencyRate>();
@@ -195,6 +196,13 @@ namespace BankClient.ViewModels
             SelectedAccount = Accounts.First();
 
             _ = LoadCurrencyRatesAsync();
+
+            _balanceUpdateTimer = new System.Threading.Timer(
+               _ => Application.Current.Dispatcher.Invoke(RefreshBalance),
+               null,
+               TimeSpan.FromSeconds(1),
+               TimeSpan.FromSeconds(2)
+            );
 
             Log = "Ready";
         }
@@ -392,6 +400,70 @@ namespace BankClient.ViewModels
             finally
             {
                 IsBusy = false;
+            }
+        }
+
+        private async void RefreshBalance()
+        {
+            if (SelectedAccount == null || IsBusy) return;
+
+            try
+            {
+                var request = new TransactionRequest
+                {
+                    AccountNumber = SelectedAccount.AccountNumber,
+                    Amount = 0,
+                    Type = TransactionType.CheckBalance
+                };
+
+                var response = await Task.Run(() => _bankClient.SendRequest(request));
+
+                if (response.ResultStatus == TransactionResult.Success)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (Balance != response.NewBalance)
+                        {
+                            Balance = response.NewBalance;
+                            SelectedAccount.Balance = response.NewBalance;
+                        }
+
+                        if (response.History != null && response.History.Count > 0)
+                        {
+                            UpdateHistoryFromDto(response.History);
+                        }
+                    });
+                }
+            }
+            catch { }
+        }
+
+        private void UpdateHistoryFromDto(List<TransactionHistoryDTO> serverHistory)
+        {
+            if (TransactionHistory.Count > 0 && serverHistory.Count > 0)
+            {
+                var lastLocal = TransactionHistory.FirstOrDefault();
+                var lastServer = serverHistory[0];
+
+                if (lastLocal.Timestamp.ToString("g") == lastServer.Timestamp.ToString("g") &&
+                    lastLocal.Balance == lastServer.BalanceAfter)
+                {
+                    return;
+                }
+            }
+
+            TransactionHistory.Clear();
+
+            foreach (var dto in serverHistory)
+            {
+                TransactionHistory.Add(new TransactionHistoryItem
+                {
+                    Timestamp = dto.Timestamp,
+                    Type = dto.Type.ToString(),
+                    Amount = dto.Amount,
+                    Balance = dto.BalanceAfter,
+                    Status = dto.Status.ToString()
+                });
             }
         }
 
