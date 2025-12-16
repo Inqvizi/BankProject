@@ -170,23 +170,6 @@ namespace BankClient.ViewModels
                 _accountHistories[account.AccountNumber] = new ObservableCollection<TransactionHistoryItem>();
             }
 
-            _accountHistories["1111"].Add(new TransactionHistoryItem
-            {
-                Timestamp = DateTime.Now.AddDays(-2),
-                Type = "Deposit",
-                Amount = 500.00m,
-                Balance = 1500.00m,
-                Status = "Success"
-            });
-            _accountHistories["1111"].Add(new TransactionHistoryItem
-            {
-                Timestamp = DateTime.Now.AddDays(-1),
-                Type = "Withdraw",
-                Amount = 500.00m,
-                Balance = 1000.00m,
-                Status = "Success"
-            });
-
             DepositCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Deposit));
             WithdrawCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Withdraw));
             RefreshCommand = new RelayCommand(async _ => await RefreshCurrencyRates());
