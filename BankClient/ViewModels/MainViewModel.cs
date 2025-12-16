@@ -176,7 +176,6 @@ namespace BankClient.ViewModels
                 _accountHistories[account.AccountNumber] = new ObservableCollection<TransactionHistoryItem>();
             }
 
-
             DepositCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Deposit));
             WithdrawCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Withdraw));
             RefreshCommand = new RelayCommand(async _ => await RefreshCurrencyRates());
