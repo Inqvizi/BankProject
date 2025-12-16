@@ -14,6 +14,7 @@
     <None Remove="Resources\Flags\eur.png" />
     <None Remove="Resources\Flags\gbp.png" />
     <None Remove="Resources\Flags\jpy.png" />
+    <None Remove="Resources\Flags\uah.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +35,7 @@
     <Resource Include="Resources\Flags\eur.png" />
     <Resource Include="Resources\Flags\gbp.png" />
     <Resource Include="Resources\Flags\jpy.png" />
+    <Resource Include="Resources\Flags\uah.png" />
   </ItemGroup>
 
 </Project>
