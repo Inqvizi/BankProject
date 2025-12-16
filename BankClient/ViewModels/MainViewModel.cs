@@ -1,16 +1,21 @@
 ﻿using BankClient.Commands;
-using System;
 using BankClient.Services;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
-using BankShared.Enums;
 using BankShared.DTOs;
+using BankShared.Enums;
+using MaterialDesignColors;
+using MaterialDesignThemes.Wpf;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Linq;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;      
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BankClient.ViewModels
 {
@@ -51,7 +56,8 @@ namespace BankClient.ViewModels
             }
         }
 
-        public string Flag { get; set; }
+        // Використовуємо шлях до зображення
+        public string FlagPath { get; set; }
 
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
         {
@@ -78,7 +84,7 @@ namespace BankClient.ViewModels
         private string _transferToAccountNumber;
         private string _transferAmount;
         private bool _isTransferMode;
-        private readonly Timer _balanceUpdateTimer;
+        private readonly System.Threading.Timer _balanceUpdateTimer;
 
         private Dictionary<string, ObservableCollection<TransactionHistoryItem>> _accountHistories;
 
@@ -155,11 +161,11 @@ namespace BankClient.ViewModels
             _currencyService = new CurrencyService();
 
             Accounts = new ObservableCollection<AccountInfo>
-    {
-        new AccountInfo { AccountNumber = "1111", DisplayName = "Main Account (1111)", Balance = 1000.00m },
-        new AccountInfo { AccountNumber = "2222", DisplayName = "Savings Account (2222)", Balance = 500.50m },
-        new AccountInfo { AccountNumber = "3333", DisplayName = "Investment Account (3333)", Balance = 999999.00m }
-    };
+            {
+                new AccountInfo { AccountNumber = "1111", DisplayName = "Main Account (1111)", Balance = 1000.00m },
+                new AccountInfo { AccountNumber = "2222", DisplayName = "Savings Account (2222)", Balance = 500.50m },
+                new AccountInfo { AccountNumber = "3333", DisplayName = "Investment Account (3333)", Balance = 999999.00m }
+            };
 
             TransactionHistory = new ObservableCollection<TransactionHistoryItem>();
             CurrencyRates = new ObservableCollection<CurrencyRate>();
@@ -216,15 +222,15 @@ namespace BankClient.ViewModels
 
                     var currenciesToDisplay = new[]
                     {
-                        ("EUR", "Euro", "🇪🇺"),
-                        ("GBP", "British Pound", "🇬🇧"),
-                        ("JPY", "Japanese Yen", "🇯🇵"),
-                        ("CHF", "Swiss Franc", "🇨🇭"),
-                        ("CAD", "Canadian Dollar", "🇨🇦"),
-                        ("UAH", "Ukrainian Hryvnia", "🇺🇦") 
-                     };
+                        ("EUR", "Euro", "/Resources/Flags/eur.png"),
+                        ("GBP", "British Pound", "/Resources/Flags/gbp.png"),
+                        ("JPY", "Japanese Yen", "/Resources/Flags/jpy.png"),
+                        ("CHF", "Swiss Franc", "/Resources/Flags/chf.png"),
+                        ("CAD", "Canadian Dollar", "/Resources/Flags/cad.png"),
+                        ("UAH", "Ukrainian Hryvna","/Resources/Flags/uah.png")
+                    };
 
-                    foreach (var (code, name, flag) in currenciesToDisplay)
+                    foreach (var (code, name, flagPath) in currenciesToDisplay)
                     {
                         if (rates.ContainsKey(code))
                         {
@@ -233,7 +239,7 @@ namespace BankClient.ViewModels
                                 CurrencyCode = code,
                                 CurrencyName = name,
                                 Rate = rates[code],
-                                Flag = flag
+                                FlagPath = flagPath
                             });
                         }
                     }
@@ -257,12 +263,13 @@ namespace BankClient.ViewModels
         private void LoadFallbackCurrencyRates()
         {
             CurrencyRates.Clear();
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "EUR", CurrencyName = "Euro", Rate = 0.92m, Flag = "🇪🇺" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "GBP", CurrencyName = "British Pound", Rate = 0.79m, Flag = "🇬🇧" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "JPY", CurrencyName = "Japanese Yen", Rate = 149.50m, Flag = "🇯🇵" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CHF", CurrencyName = "Swiss Franc", Rate = 0.88m, Flag = "🇨🇭" });
-            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CAD", CurrencyName = "Canadian Dollar", Rate = 1.36m, Flag = "🇨🇦" });
-        }
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "EUR", CurrencyName = "Euro", Rate = 0.92m, FlagPath = "/Resources/Flags/eur.png" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "GBP", CurrencyName = "British Pound", Rate = 0.79m, FlagPath = "/Resources/Flags/gbp.png" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "JPY", CurrencyName = "Japanese Yen", Rate = 149.50m, FlagPath = "/Resources/Flags/jpy.png" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CHF", CurrencyName = "Swiss Franc", Rate = 0.88m, FlagPath = "/Resources/Flags/chf.png" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CAD", CurrencyName = "Canadian Dollar", Rate = 1.36m, FlagPath = "/Resources/Flags/cad.png" });
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "UAH", CurrencyName = "Ukrainian Hryvna", Rate = 42.27m, FlagPath = "/Resources/Flags/uah.png" });
+            }
 
         private void ToggleTransferMode()
         {
@@ -280,10 +287,7 @@ namespace BankClient.ViewModels
 
         private async Task ExecuteTransfer()
         {
-            if (IsBusy || SelectedAccount == null)
-            {
-                return;
-            }
+            if (IsBusy || SelectedAccount == null) return;
 
             if (string.IsNullOrWhiteSpace(TransferToAccountNumber))
             {
@@ -305,7 +309,6 @@ namespace BankClient.ViewModels
                 if (!decimal.TryParse(TransferAmount, out decimal validAmount))
                 {
                     Log = "Error: Please enter a valid number";
-                    MessageBox.Show(Log);
                     return;
                 }
 
@@ -452,10 +455,7 @@ namespace BankClient.ViewModels
 
         private async Task ExecuteTransaction(TransactionType transactionType)
         {
-            if (IsBusy || SelectedAccount == null)
-            {
-                return;
-            }
+            if (IsBusy || SelectedAccount == null) return;
 
             IsBusy = true;
             Log = "Processing transaction...";
@@ -465,7 +465,6 @@ namespace BankClient.ViewModels
                 if (!decimal.TryParse(AmountToEnter, out decimal validAmount))
                 {
                     Log = "Error: Please enter a valid number";
-                    MessageBox.Show(Log);
                     return;
                 }
 
