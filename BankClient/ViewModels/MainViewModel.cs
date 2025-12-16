@@ -2,19 +2,20 @@
 using BankClient.Services;
 using BankShared.DTOs;
 using BankShared.Enums;
+using MaterialDesignColors;
 using MaterialDesignThemes.Wpf;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using MaterialDesignColors;
-using System.Windows.Media;      
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;      
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BankClient.ViewModels
 {
@@ -175,23 +176,6 @@ namespace BankClient.ViewModels
                 _accountHistories[account.AccountNumber] = new ObservableCollection<TransactionHistoryItem>();
             }
 
-            _accountHistories["1111"].Add(new TransactionHistoryItem
-            {
-                Timestamp = DateTime.Now.AddDays(-2),
-                Type = "Deposit",
-                Amount = 500.00m,
-                Balance = 1500.00m,
-                Status = "Success"
-            });
-            _accountHistories["1111"].Add(new TransactionHistoryItem
-            {
-                Timestamp = DateTime.Now.AddDays(-1),
-                Type = "Withdraw",
-                Amount = 500.00m,
-                Balance = 1000.00m,
-                Status = "Success"
-            });
-
             DepositCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Deposit));
             WithdrawCommand = new RelayCommand(async _ => await ExecuteTransaction(TransactionType.Withdraw));
             RefreshCommand = new RelayCommand(async _ => await RefreshCurrencyRates());
@@ -242,7 +226,8 @@ namespace BankClient.ViewModels
                         ("GBP", "British Pound", "/Resources/Flags/gbp.png"),
                         ("JPY", "Japanese Yen", "/Resources/Flags/jpy.png"),
                         ("CHF", "Swiss Franc", "/Resources/Flags/chf.png"),
-                        ("CAD", "Canadian Dollar", "/Resources/Flags/cad.png")
+                        ("CAD", "Canadian Dollar", "/Resources/Flags/cad.png"),
+                        ("UAH", "Ukrainian Hryvna","/Resources/Flags/uah.png")
                     };
 
                     foreach (var (code, name, flagPath) in currenciesToDisplay)
@@ -283,7 +268,8 @@ namespace BankClient.ViewModels
             CurrencyRates.Add(new CurrencyRate { CurrencyCode = "JPY", CurrencyName = "Japanese Yen", Rate = 149.50m, FlagPath = "/Resources/Flags/jpy.png" });
             CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CHF", CurrencyName = "Swiss Franc", Rate = 0.88m, FlagPath = "/Resources/Flags/chf.png" });
             CurrencyRates.Add(new CurrencyRate { CurrencyCode = "CAD", CurrencyName = "Canadian Dollar", Rate = 1.36m, FlagPath = "/Resources/Flags/cad.png" });
-        }
+            CurrencyRates.Add(new CurrencyRate { CurrencyCode = "UAH", CurrencyName = "Ukrainian Hryvna", Rate = 42.27m, FlagPath = "/Resources/Flags/uah.png" });
+            }
 
         private void ToggleTransferMode()
         {
